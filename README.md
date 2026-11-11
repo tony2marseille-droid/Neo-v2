@@ -5,6 +5,10 @@
 <h1 align="center">Néo V2</h1>
 
 <p align="center">
+  <b>Français</b> · <a href="README.en.md">English</a>
+</p>
+
+<p align="center">
   <b>L'IA complète qui vit sur ton PC. Rien ne sort.</b><br>
   Conversation · images 4K · retouche · vidéo · documents Office · 3D imprimable · voix<br>
   100 % local, en français, sans abonnement.
@@ -137,19 +141,10 @@ Néo avance chaque semaine. Deux chantiers sont en cours :
 
 ### À savoir avant de l'essayer
 
-Néo est un projet personnel, construit et réglé sur **une** machine
-(Windows 11, RTX 16 Go, 48 Go de RAM, un SSD et un disque d'archives). Il
-n'a pas encore été installé ailleurs :
-
-- les chemins par défaut (`E:\ia`, `E:\localai-rs`) se changent par les
-  variables d'environnement ci-dessous, mais `code/config/services.json`
-  (services lancés par le superviseur) et `correspondances.psd1`
-  (déploiement) décrivent l'installation de référence et sont à adapter ;
-- les modèles ne sont pas dans le dépôt, et chacun a sa licence — certaines
-  interdisent l'usage commercial ou sont limitées à certains pays : lire
-  [`docs/DEPENDANCES.md`](docs/DEPENDANCES.md) avant de les télécharger ;
-- les temps annoncés sont ceux de cette machine
-  ([`docs/MEDIAS.md`](docs/MEDIAS.md) détaille chaque mesure).
+- Néo a été construit sur une machine de référence (Windows 11, RTX 5080 16 Go, 48 Go de RAM) et validé sur un portable RTX 3060 6 Go ; chaque version est aussi installée sur un Windows vierge avant d'être publiée.
+- Les temps annoncés sont ceux de la machine de référence ([`docs/MEDIAS.md`](docs/MEDIAS.md) détaille les mesures).
+- Les modèles ne sont pas dans le dépôt, et chacun a sa licence — certaines interdisent l'usage commercial ou sont limitées à certains pays : lire [`docs/DEPENDANCES.md`](docs/DEPENDANCES.md) avant de les télécharger.
+- Tout ce qui dépend de la machine se règle dans `neo.toml` : aucun chemin n'est à modifier dans le code.
 
 ---
 
@@ -230,9 +225,12 @@ Tout ce qui dépend de votre machine (dossiers, ports, outils) est réglé dans 
 
 | Matériel | Ce qui fonctionne |
 |---|---|
-| Sans carte NVIDIA | conversation avec de petits modèles, documents, outils, voix, 3D paramétrique |
-| NVIDIA 8 Go, 32 Go de RAM | tout ce qui précède, avec des modèles plus grands |
-| NVIDIA 16 Go, 48 Go de RAM | + studio image 4K, vidéo, 3D par IA, entraînement (moteurs à installer : [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md)) |
+| Sans carte NVIDIA (ou moins de 8 Go) | conversation avec de petits modèles, documents, outils, voix, 3D paramétrique |
+| NVIDIA 8 Go | + modèles plus grands, studio image 4K |
+| NVIDIA 12 Go | + vidéo, 3D par IA |
+| NVIDIA 16 Go et 32 Go de RAM | + entraînement de modèles |
+
+Les moteurs d'image, de vidéo et de 3D par IA sont de gros téléchargements, encore à installer à la main : voir [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md). L'interface grise les modules que la machine ne peut pas faire tourner et en donne la raison.
 
 Depuis les sources (développeurs) : `cargo build --release` dans `code/localai-rs`, `npm run build` dans `code/frontend`, puis `code/installateur/assembler.ps1` produit l'archive.
 
