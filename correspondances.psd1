@@ -49,6 +49,10 @@
         @{ Depot = 'config\services.json'; Vivant = 'E:\ia\config\services.json' }   # services du superviseur (relu a chaud)
         @{ Depot = 'config\neo_persona.md'; Vivant = 'E:\ia\config\neo_persona.md' }  # personnage de Neo (relu a chaque message)
         @{ Depot = 'config\neo.toml'; Vivant = 'E:\ia\neo.toml' }                     # reglages de CETTE machine (non versionne)
+        # Meme fichier a cote des executables Rust : le superviseur tourne sous le
+        # compte SYSTEM, qui ne voit pas LOCALAI_ROOT (variable du compte utilisateur) ;
+        # il trouve ce neo.toml en remontant depuis target\release (racine = E:\ia).
+        @{ Depot = 'config\neo.toml'; Vivant = 'E:\localai-rs\neo.toml' }
         # Scripts a la racine de E:\ia, lances par le serveur ou par les taches planifiees
         @{ Depot = 'racine\apprentissage.py';    Vivant = 'E:\ia\apprentissage.py' }    # route /documents (apprentissage)
         @{ Depot = 'racine\conseil.py';          Vivant = 'E:\ia\conseil.py' }          # route /conseil
