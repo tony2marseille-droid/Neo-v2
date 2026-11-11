@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  rust:
+    name: Rust (clippy + tests)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: code/localai-rs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: code/localai-rs
+
+      # Les 22 warnings actuels sont preexistants et documentes dans l'audit.
+      # On ne les transforme pas encore en erreur (-D warnings) pour ne pas
+      # bloquer la CI sur du code inchange ; l'objectif est de detecter les
+      # erreurs de compilation et les regressions de tests.
+      - name: Clippy
+        run: cargo clippy --release --workspace --all-targets
+
+      # NEO_LIVE_TESTS volontairement absent : les tests d'integration qui
+      # exigent Ollama retournent immediatement sur un runner sans GPU.
+      - name: Tests
+        run: cargo test --release --workspace
+
+  frontend:
+    name: Frontend (tsc + oxlint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: code/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: code/frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Typage
+        run: npx tsc -b
+
+      - name: Lint
+        run: npx oxlint
+
+  python:
+    name: Python (syntaxe)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Le backend importe des dependances lourdes (torch, diffusers) :
+      # on ne verifie ici que la syntaxe, pas l'importabilite.
+      - name: Compilation
+        run: python -m compileall -q code/backend

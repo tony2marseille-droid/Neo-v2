@@ -1,0 +1,69 @@
+# --- Build artifacts ---
+target/
+target-pgo/
+dist/
+node_modules/
+*.exe
+
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# --- Donnees locales (jamais versionner) ---
+data/
+logs/
+workspace/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+
+# --- Modeles (trop volumineux — via Ollama/HF) ---
+*.gguf
+*.safetensors
+*.bin
+*.ckpt
+
+# --- Local ---
+.env
+*.local
+*.log
+.bak*
+*.bak
+source_mirror/
+ops/
+eval/
+llama-cpp-src/
+/tools/
+
+# --- Sauvegardes horodatees (E:\ia en contient des centaines) ---
+*.bak_*
+*.orig
+*.rej
+
+
+# --- Bancs de mesure : resultats JSON versionnes, images de test non ---
+code/eval/resultats/image_*/
+!code/eval/
+
+# --- Donnees et outils personnels (ne jamais publier) ---
+neo.toml
+code/config/services.json
+code/eval/resultats/agents_*.json
+perso/
+PLAN_VERSION_ADAPTABLE.*
+CHANTIER_*.md
+PUBLIER.md
+export_github.ps1
+gitinit.bat
+commit_*.bat
+.pytest_cache/
+*.jsonl
+.env.*
+secrets*.json
+*.pem
+*.key
+assets/demo_neo.gif
+.claude/

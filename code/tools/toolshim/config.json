@@ -1,0 +1,16 @@
+{
+  "upstream_url": "http://127.0.0.1:11434",
+  "host": "127.0.0.1",
+  "port": 8330,
+  "native_models": [],
+  "emulated_models": ["qwen3:*", "gemma3:*", "localai-prog*", "llama3*", "mistral*", "deepseek*", "phi*"],
+  "auto_detect": true,
+  "max_tools_in_prompt": 8,
+  "max_retries": 2,
+  "max_calls_per_turn": 4,
+  "request_timeout": 300.0,
+  "constrained_output": true,
+  "temperature": 0.0,
+  "disable_thinking": true,
+  "log_level": "INFO"
+}

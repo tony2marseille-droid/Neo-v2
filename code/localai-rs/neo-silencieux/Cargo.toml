@@ -1,0 +1,7 @@
+[package]
+name = "neo-silencieux"
+version = "0.1.0"
+edition = "2021"
+description = "Lanceur sans fenetre pour les taches planifiees de Neo"
+
+[dependencies]

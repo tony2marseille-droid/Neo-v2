@@ -1,0 +1,32 @@
+pub mod auth;
+pub mod benchmark;
+pub mod chat;
+pub mod comms;
+pub mod connecteurs;
+pub mod conversations;
+pub mod conseil;
+pub mod fournisseurs;
+pub mod veille;
+pub mod documents;
+pub mod extras;
+pub mod finetune;
+pub mod health;
+pub mod logs;
+pub mod mcp;
+pub mod memory;
+pub mod models;
+pub mod onboarding;
+pub mod openai;
+pub mod outil;
+pub mod public_apis;
+pub mod sd;
+pub mod security;
+pub mod settings;
+pub mod studio;
+pub mod style_collab;
+pub mod system;
+pub mod tts;
+pub mod voice;
+
+
+pub mod video;

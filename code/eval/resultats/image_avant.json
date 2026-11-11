@@ -1,0 +1,69 @@
+{
+ "etiquette": "avant",
+ "date": "2026-11-09 01:31",
+ "duree_moyenne_s": 95.6,
+ "laplacien_moyen": 988.7,
+ "note_vision_moyenne": 6.11,
+ "images": [
+  {
+   "nom": "portrait",
+   "duree_s": 114.5,
+   "message": "Image generee: E:\\neo-repo\\code\\eval\\resultats\\image_avant\\portrait.jpg (2463 Ko) [flux1-schnell-q8_0.gguf, 4 steps, passe 2560x1440, 3840x2160] [temps reel: 114.4s / estimation: ~87s]",
+   "fichier": "E:\\neo-repo\\code\\eval\\resultats\\image_avant\\portrait.jpg",
+   "octets": 2522288,
+   "taille": [
+    3840,
+    2160
+   ],
+   "laplacien": 494.6,
+   "tenengrad": 234.9,
+   "vision": {
+    "detail": 9.0,
+    "realisme": 8.0,
+    "artefacts": 2.0,
+    "moyenne": 6.33,
+    "commentaire": "L'image est très détaillée, avec une texture peau très réaliste. Le réalisme est excellent, avec des ombres et des lumières naturelles qui donnent vie à la photo. Il y a quelques artefacts visibles, p"
+   }
+  },
+  {
+   "nom": "paysage",
+   "duree_s": 85.3,
+   "message": "Image generee: E:\\neo-repo\\code\\eval\\resultats\\image_avant\\paysage.jpg (3595 Ko) [flux1-schnell-q8_0.gguf, 4 steps, passe 2560x1440, 3840x2160] [temps reel: 85.3s / estimation: ~87s]",
+   "fichier": "E:\\neo-repo\\code\\eval\\resultats\\image_avant\\paysage.jpg",
+   "octets": 3681979,
+   "taille": [
+    3840,
+    2160
+   ],
+   "laplacien": 2208.1,
+   "tenengrad": 978.3,
+   "vision": {
+    "detail": 8.0,
+    "realisme": 7.0,
+    "artefacts": 2.0,
+    "moyenne": 5.67,
+    "commentaire": "Cette image présente une scène d'hiver avec des chalets traditionnels alpins. Les détails des chalets et des montagnes sont bien rendus, mais il y a une légère altération dans les nuages et les ombres"
+   }
+  },
+  {
+   "nom": "objet",
+   "duree_s": 86.9,
+   "message": "Image generee: E:\\neo-repo\\code\\eval\\resultats\\image_avant\\objet.jpg (1868 Ko) [flux1-schnell-q8_0.gguf, 4 steps, passe 2560x1440, 3840x2160] [temps reel: 86.9s / estimation: ~87s]",
+   "fichier": "E:\\neo-repo\\code\\eval\\resultats\\image_avant\\objet.jpg",
+   "octets": 1913426,
+   "taille": [
+    3840,
+    2160
+   ],
+   "laplacien": 263.4,
+   "tenengrad": 136.5,
+   "vision": {
+    "detail": 9.0,
+    "realisme": 8.0,
+    "artefacts": 2.0,
+    "moyenne": 6.33,
+    "commentaire": "L'image est très détaillée, avec une belle représentation des textures de la montre et du bracelet. Le réalisme est bon, mais il y a une légère distorsion dans les détails de la montre, ce qui pourrai"
+   }
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+# Normalisation des fins de ligne.
+#
+# Les sources vivantes sont editees sous Windows (CRLF) mais le depot doit
+# rester stable : on stocke TOUJOURS du LF et Git convertit a la sortie.
+# Sans cette regle, chaque commit reecrit des fichiers entiers et le vrai
+# diff devient illisible (cas de README.md et docs/TECHNIQUE.md).
+* text=auto eol=lf
+
+# Binaires : aucune conversion, jamais.
+*.png        binary
+*.jpg        binary
+*.jpeg       binary
+*.gif        binary
+*.ico        binary
+*.webp       binary
+*.gguf       binary
+*.safetensors binary
+*.db         binary
+*.exe        binary
+
+# Scripts Windows : doivent conserver leurs CRLF pour cmd.exe.
+*.bat        text eol=crlf
+*.cmd        text eol=crlf

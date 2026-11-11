@@ -1,0 +1,449 @@
+/* ============================================================
+   THEMES (skins) — source unique de l'apparence.
+   Chaque skin definit TOUS les jetons : couleurs (dont leurs composantes
+   RGB pour les transparences : rgba(var(--accent-rgb), 0.2)), polices,
+   formes et mouvement. Le reste du CSS n'ecrit plus aucune couleur en dur :
+   changer de skin change toute l'interface, animations comprises.
+   Le skin est pose sur <html data-skin="..."> avant le premier rendu.
+   ============================================================ */
+
+:root,
+html[data-skin="oracle"] {
+  color-scheme: dark;
+  --bg: #020603;
+  --bg-rgb: 2, 6, 3;
+  --surface-rgb: 6, 20, 11;
+  --surface-solide: #06170b;
+  --bg-panel: rgba(var(--surface-rgb), 0.72);
+  --bg-card: rgba(var(--surface-rgb), 0.55);
+  --text: #d8f5de;
+  --text-rgb: 200, 245, 210;
+  --accent: #00ff41;
+  --accent-rgb: 0, 255, 65;
+  --accent-soft: #7dffa8;
+  --accent-soft-rgb: 125, 255, 168;
+  --accent-2-rgb: 0, 160, 40;
+  --sur-accent: #02150a;
+  --danger-rgb: 255, 69, 58;
+  --warn-rgb: 255, 214, 10;
+  --green: #00ff41;
+  --orange: #ffd60a;
+  --red: #ff453a;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+  --glow: 0 0 24px -6px rgba(var(--accent-rgb), 0.35);
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-titre: "Cascadia Code", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  --mono: "Cascadia Code", "JetBrains Mono", "SF Mono", Consolas, monospace;
+  --titre-casse: uppercase;
+  --titre-espacement: 1.6px;
+  --bordure: 1px solid;
+  /* Mouvement */
+  --anim-vue: entree-oracle 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  --anim-msg: entree-oracle 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  --anim-carte: entree-oracle 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  --survol-transform: translateY(-1px);
+  --survol-ombre: 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
+  --transition: 0.18s ease;
+}
+
+/* ---------- Cartoon : pastel lumineux, formes rondes, rebonds ---------- */
+html[data-skin="cartoon"] {
+  color-scheme: light;
+  --bg: #f0f7ff;
+  --bg-rgb: 240, 247, 255;
+  --surface-rgb: 255, 255, 255;
+  --surface-solide: #ffffff;
+  --bg-panel: rgba(var(--surface-rgb), 0.86);
+  --bg-card: rgba(var(--surface-rgb), 0.74);
+  --text: #2d3436;
+  --text-rgb: 45, 52, 54;
+  --accent: #ff6b6b;
+  --accent-rgb: 255, 107, 107;
+  --accent-soft: #ff9ff3;
+  --accent-soft-rgb: 255, 159, 243;
+  --accent-2-rgb: 77, 171, 247;
+  --sur-accent: #ffffff;
+  --danger-rgb: 240, 62, 62;
+  --warn-rgb: 252, 196, 25;
+  --green: #40c057;
+  --orange: #f59f00;
+  --red: #f03e3e;
+  --radius: 18px;
+  --radius-lg: 28px;
+  --shadow: 0 8px 0 rgba(45, 52, 54, 0.08), 0 14px 30px rgba(45, 52, 54, 0.12);
+  --glow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+  --font-ui: "Trebuchet MS", "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --font-titre: "Comic Sans MS", "Segoe Print", "Chalkboard SE", cursive;
+  --mono: "Comic Sans MS", "Segoe Print", "Chalkboard SE", cursive;
+  --titre-casse: none;
+  --titre-espacement: 0.3px;
+  --bordure: 2px solid;
+  --anim-vue: entree-cartoon 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  --anim-msg: entree-cartoon 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  --anim-carte: entree-cartoon 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  --survol-transform: translateY(-3px) rotate(-0.6deg) scale(1.02);
+  --survol-ombre: 0 10px 0 rgba(var(--accent-rgb), 0.18), 0 16px 28px rgba(45, 52, 54, 0.14);
+  --transition: 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---------- Retro : terminal ambre des annees 80, ombres dures ---------- */
+html[data-skin="retro"] {
+  color-scheme: dark;
+  --bg: #1a1a2e;
+  --bg-rgb: 26, 26, 46;
+  --surface-rgb: 36, 36, 58;
+  --surface-solide: #1a1a2e;
+  --bg-panel: rgba(var(--surface-rgb), 0.9);
+  --bg-card: rgba(var(--surface-rgb), 0.66);
+  --text: #f1e6cf;
+  --text-rgb: 241, 230, 207;
+  --accent: #e0b354;
+  --accent-rgb: 224, 179, 84;
+  --accent-soft: #f2d9a6;
+  --accent-soft-rgb: 242, 217, 166;
+  --accent-2-rgb: 212, 163, 115;
+  --sur-accent: #1a1a2e;
+  --danger-rgb: 248, 113, 113;
+  --warn-rgb: 251, 191, 36;
+  --green: #a3e635;
+  --orange: #fbbf24;
+  --red: #f87171;
+  --radius: 3px;
+  --radius-lg: 6px;
+  --shadow: 4px 4px 0 rgba(0, 0, 0, 0.55);
+  --glow: none;
+  --font-ui: "Lucida Sans Typewriter", "Lucida Console", "Courier New", monospace;
+  --font-titre: "Courier New", "Lucida Console", monospace;
+  --mono: "Lucida Console", "Courier New", monospace;
+  --titre-casse: uppercase;
+  --titre-espacement: 2px;
+  --bordure: 2px solid;
+  --anim-vue: entree-retro-vue 0.42s steps(5, end) backwards;
+  --anim-msg: entree-retro 0.36s steps(6, end) backwards;
+  --anim-carte: entree-retro 0.5s steps(8, end) backwards;
+  --survol-transform: translate(-2px, -2px);
+  --survol-ombre: 6px 6px 0 rgba(0, 0, 0, 0.6);
+  --transition: 0.08s steps(2, end);
+}
+
+/* ---------- Cyberpunk : neons magenta/cyan, glitch ---------- */
+html[data-skin="cyberpunk"] {
+  color-scheme: dark;
+  --bg: #050510;
+  --bg-rgb: 5, 5, 16;
+  --surface-rgb: 14, 12, 34;
+  --surface-solide: #0b0a1e;
+  --bg-panel: rgba(var(--surface-rgb), 0.82);
+  --bg-card: rgba(var(--surface-rgb), 0.56);
+  --text: #b8faff;
+  --text-rgb: 184, 250, 255;
+  --accent: #ff2bd6;
+  --accent-rgb: 255, 43, 214;
+  --accent-soft: #00e5ff;
+  --accent-soft-rgb: 0, 229, 255;
+  --accent-2-rgb: 0, 229, 255;
+  --sur-accent: #050510;
+  --danger-rgb: 255, 70, 85;
+  --warn-rgb: 255, 214, 0;
+  --green: #00e5ff;
+  --orange: #ffd600;
+  --red: #ff4655;
+  --radius: 2px;
+  --radius-lg: 4px;
+  --shadow: 0 0 22px rgba(var(--accent-rgb), 0.25), 0 0 44px rgba(var(--accent-soft-rgb), 0.1);
+  --glow: 0 0 24px rgba(var(--accent-rgb), 0.5);
+  --font-ui: "Bahnschrift", "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --font-titre: "Bahnschrift SemiCondensed", "Bahnschrift", sans-serif;
+  --mono: "Bahnschrift", "Segoe UI", sans-serif;
+  --titre-casse: uppercase;
+  --titre-espacement: 3px;
+  --bordure: 1px solid;
+  --anim-vue: entree-cyber-vue 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  --anim-msg: entree-cyber 0.38s linear backwards;
+  --anim-carte: entree-cyber 0.5s linear backwards;
+  --survol-transform: translateX(2px) skewX(-2deg);
+  --survol-ombre: 0 0 22px rgba(var(--accent-rgb), 0.6), -3px 0 0 rgba(var(--accent-soft-rgb), 0.7);
+  --transition: 0.12s ease;
+}
+
+/* ---------- Aurore : clair, sobre et lumineux (travail au quotidien) ---------- */
+html[data-skin="aurore"] {
+  color-scheme: light;
+  --bg: #f6f7fb;
+  --bg-rgb: 246, 247, 251;
+  --surface-rgb: 255, 255, 255;
+  --surface-solide: #ffffff;
+  --bg-panel: rgba(var(--surface-rgb), 0.8);
+  --bg-card: rgba(var(--surface-rgb), 0.9);
+  --text: #1f2430;
+  --text-rgb: 31, 36, 48;
+  --accent: #5b5bd6;
+  --accent-rgb: 91, 91, 214;
+  --accent-soft: #8e8cf0;
+  --accent-soft-rgb: 142, 140, 240;
+  --accent-2-rgb: 236, 120, 160;
+  --sur-accent: #ffffff;
+  --danger-rgb: 220, 53, 69;
+  --warn-rgb: 230, 150, 0;
+  --green: #1f9d6b;
+  --orange: #d98200;
+  --red: #dc3545;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 1px 2px rgba(31, 36, 48, 0.06), 0 8px 24px rgba(31, 36, 48, 0.08);
+  --glow: 0 0 0 3px rgba(var(--accent-rgb), 0.16);
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-titre: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --mono: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --titre-casse: none;
+  --titre-espacement: 0.2px;
+  --bordure: 1px solid;
+  --anim-vue: entree-aurore 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  --anim-msg: entree-aurore 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  --anim-carte: entree-aurore 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  --survol-transform: translateY(-2px);
+  --survol-ombre: 0 2px 4px rgba(31, 36, 48, 0.06), 0 14px 32px rgba(var(--accent-rgb), 0.16);
+  --transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Derives communs : calcules depuis les jetons de chaque skin.
+   --mono est la police des etiquettes et titres du skin ; --code reste une
+   vraie chasse fixe pour le code, quel que soit le skin. */
+:root {
+  --code: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --bg-hover: rgba(var(--accent-rgb), 0.08);
+  --border: rgba(var(--accent-rgb), 0.16);
+  --border-strong: rgba(var(--accent-rgb), 0.34);
+  --text-dim: rgba(var(--text-rgb), 0.66);
+  --text-faint: rgba(var(--text-rgb), 0.38);
+  --accent-dim: rgba(var(--accent-rgb), 0.16);
+}
+
+/* ============================================================
+   AFFICHAGE DYNAMIQUE — entrees, survols, transitions de vue
+   ============================================================ */
+
+@keyframes entree-oracle {
+  from { opacity: 0; transform: translateY(8px); filter: blur(4px) brightness(1.6); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes entree-cartoon {
+  0% { opacity: 0; transform: scale(0.86) rotate(-1.4deg); }
+  60% { opacity: 1; transform: scale(1.03) rotate(0.5deg); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes entree-retro {
+  from { opacity: 0.2; clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+
+@keyframes entree-cyber {
+  0% { opacity: 0; transform: translateX(-10px) skewX(-8deg); filter: hue-rotate(90deg); }
+  25% { opacity: 1; transform: translateX(5px) skewX(4deg); clip-path: inset(18% 0 34% 0); }
+  50% { transform: translateX(-3px); clip-path: inset(0 0 62% 0); filter: hue-rotate(-40deg); }
+  75% { transform: translateX(1px); clip-path: inset(40% 0 0 0); }
+  100% { opacity: 1; transform: none; clip-path: inset(0 0 0 0); filter: none; }
+}
+
+/* Entrees de VUE sans clip-path : meme interrompues (onglet masque),
+   elles ne masquent jamais le contenu. */
+@keyframes entree-retro-vue {
+  0% { opacity: 0; }
+  40% { opacity: 0.7; }
+  60% { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+
+@keyframes entree-cyber-vue {
+  0% { opacity: 0; transform: translateX(-12px) skewX(-6deg); filter: hue-rotate(80deg) saturate(2); }
+  40% { opacity: 1; transform: translateX(4px) skewX(2deg); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes entree-aurore {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+body {
+  font-family: var(--font-ui);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+h1, h2, h3, .titre, .sidebar-section-title {
+  font-family: var(--font-titre);
+}
+
+code, pre, kbd, samp {
+  font-family: var(--code);
+}
+
+/* Changement de vue : la vue entre selon le style du skin. */
+.vue-panneau > * {
+  animation: var(--anim-vue);
+}
+
+/* Reflexion de Neo : repliee une fois la reponse arrivee. */
+.msg-pensee {
+  margin: 0 0 8px;
+  border-left: 2px solid rgba(var(--accent-rgb), 0.45);
+  padding: 2px 0 2px 10px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.msg-pensee summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  list-style: none;
+}
+.msg-pensee summary::before {
+  content: "◆ ";
+  display: inline-block;
+  animation: pensee-pulse 1.4s ease-in-out infinite;
+}
+.msg-pensee[open] summary::before {
+  animation-play-state: running;
+}
+.msg-pensee:not([open]) summary::before {
+  animation: none;
+}
+.msg-pensee-texte {
+  white-space: pre-wrap;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+@keyframes pensee-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* Messages de conversation. */
+.msg {
+  animation: var(--anim-msg);
+}
+
+/* Cartes et tuiles : entree echelonnee selon leur rang. */
+.carte-anim,
+.panel,
+.doc-card,
+.fiche-card,
+.model-card,
+.model-3d-card,
+.neo-file-card,
+.stage-card,
+.hud-panel,
+.skin-card {
+  animation: var(--anim-carte);
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+:is(.panel, .doc-card, .fiche-card, .model-card, .neo-file-card, .stage-card, .hud-panel, .skin-card):nth-child(2) { --i: 1; }
+:is(.panel, .doc-card, .fiche-card, .model-card, .neo-file-card, .stage-card, .hud-panel, .skin-card):nth-child(3) { --i: 2; }
+:is(.panel, .doc-card, .fiche-card, .model-card, .neo-file-card, .stage-card, .hud-panel, .skin-card):nth-child(4) { --i: 3; }
+:is(.panel, .doc-card, .fiche-card, .model-card, .neo-file-card, .stage-card, .hud-panel, .skin-card):nth-child(5) { --i: 4; }
+:is(.panel, .doc-card, .fiche-card, .model-card, .neo-file-card, .stage-card, .hud-panel, .skin-card):nth-child(n + 6) { --i: 5; }
+
+/* Survol des elements interactifs : reaction propre a chaque skin. */
+button:not(:disabled),
+.carte-anim,
+.doc-card,
+.model-card,
+.neo-file-card,
+.skin-card,
+.tab {
+  transition: transform var(--transition), box-shadow var(--transition),
+    background-color var(--transition), border-color var(--transition), color var(--transition);
+}
+
+button.primary:hover:not(:disabled),
+.carte-anim:hover,
+.doc-card:hover,
+.model-card:hover,
+.neo-file-card:hover,
+.skin-card:hover {
+  transform: var(--survol-transform);
+  box-shadow: var(--survol-ombre);
+}
+
+/* Les skins clairs n'ont pas de texture CRT. */
+html[data-skin="cartoon"] body::after,
+html[data-skin="aurore"] body::after,
+html[data-skin="retro"] body::after,
+html[data-skin="cyberpunk"] body::after {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vue-panneau > *,
+  .msg,
+  .carte-anim,
+  .panel,
+  .doc-card,
+  .fiche-card,
+  .model-card,
+  .model-3d-card,
+  .neo-file-card,
+  .stage-card,
+  .hud-panel,
+  .skin-card {
+    animation: none;
+  }
+  button.primary:hover:not(:disabled),
+  .carte-anim:hover,
+  .doc-card:hover,
+  .model-card:hover,
+  .neo-file-card:hover,
+  .skin-card:hover {
+    transform: none;
+  }
+}
+
+/* ---------- Aurore : fond (nappes de lumiere qui derivent) et apercu ---------- */
+.bg-aurore {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(170deg, #f6f7fb 0%, #eef0fb 60%, #fbf1f5 100%);
+}
+.aurore-nappe {
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.45;
+  animation: aurore-derive 28s ease-in-out infinite alternate;
+}
+.aurore-nappe.n1 { background: rgba(91, 91, 214, 0.32); left: -18vmax; top: -24vmax; }
+.aurore-nappe.n2 { background: rgba(236, 120, 160, 0.28); right: -20vmax; bottom: -26vmax; animation-delay: -9s; }
+.aurore-nappe.n3 { background: rgba(80, 190, 220, 0.22); left: 30vw; top: 40vh; width: 40vmax; height: 40vmax; animation-delay: -17s; }
+
+@keyframes aurore-derive {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(6vmax, 4vmax) scale(1.12); }
+}
+
+.apercu-aurore {
+  background: linear-gradient(135deg, #eef0fb, #fbf1f5);
+}
+.apercu-aurore i {
+  border-radius: 50%;
+  filter: blur(3px);
+  animation: apercu-bulle 3.4s ease-in-out infinite;
+}
+.apercu-aurore i:nth-child(1) { width: 18px; height: 18px; left: 4px; top: 6px; background: #8e8cf0; }
+.apercu-aurore i:nth-child(2) { width: 14px; height: 14px; left: 20px; top: 16px; background: #ec78a0; animation-delay: 0.8s; }
+.apercu-aurore i:nth-child(3) { width: 10px; height: 10px; right: 4px; top: 4px; background: #66c6e0; animation-delay: 1.6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .aurore-nappe,
+  .apercu-aurore i {
+    animation: none;
+  }
+}

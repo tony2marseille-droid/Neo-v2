@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Néo V2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Néo V2 : un assistant IA complet qui tourne entièrement sur ton PC. Conversation, images 4K, retouche, vidéo, documents, 3D et voix, en français, sans abonnement ni cloud. Licence MIT.">
+<meta property="og:title" content="Néo V2 — l'IA complète qui vit sur ton PC">
+<meta property="og:description" content="Conversation, images 4K, retouche, vidéo, documents, 3D et voix. 100 % local, en français, licence MIT.">
+<meta property="og:image" content="medias/portrait_2.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Mise en page : une seule colonne éditoriale (max 1120 px) ; chaque section est
+   une bande pleine largeur dont le contenu reprend la gouttière.
+   Identité : celle du thème « oracle » de l'interface de Néo (noir-vert,
+   phosphore), volontairement sombre et unique. */
+:root{
+  color-scheme: dark;
+  --nuit:#030805;          /* fond, le même que l'interface */
+  --sous-bois:#07130b;     /* surfaces */
+  --mousse:#0d2214;        /* surfaces relevées */
+  --trait:#1b3a24;         /* filets et bordures */
+  --ecume:#dcf5e2;         /* texte */
+  --lichen:#8fb39a;        /* texte secondaire */
+  --phosphore:#7dffa8;     /* accent principal */
+  --matrice:#00ff41;       /* accent pur, avec parcimonie */
+  --cendre:#5b7564;        /* valeurs « avant » des graphiques */
+  --ambre:#ffd27a;         /* mise en garde, rare */
+  --titre:"Space Grotesk","Segoe UI",system-ui,sans-serif;
+  --texte:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono","Cascadia Code",Consolas,monospace;
+  --rayon:14px;
+  --large:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--nuit)}
+body{margin:0;background:var(--nuit);color:var(--ecume);font:17px/1.65 var(--texte);-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:var(--phosphore)}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--phosphore);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--titre);text-wrap:balance;margin:0;line-height:1.08;letter-spacing:-.01em}
+h2{font-size:clamp(2rem,4.6vw,3.2rem);font-weight:700}
+h3{font-size:1.2rem;font-weight:600}
+p{margin:0}
+.bande{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:clamp(72px,10vw,128px)}
+.cadre{max-width:var(--large);margin:0 auto}
+.etiquette{font:600 .78rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--phosphore)}
+.chapeau{color:var(--lichen);font-size:1.12rem;max-width:62ch}
+.entete{display:grid;gap:18px;margin-bottom:clamp(36px,5vw,56px)}
+
+/* ---------- barre de navigation ---------- */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:rgba(3,8,5,.86)}
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(3,8,5,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(125,255,168,.08);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.nav .cadre{display:flex;align-items:center;gap:24px;height:60px}
+.logo{font:700 1.02rem/1 var(--mono);letter-spacing:.18em;color:var(--ecume);text-decoration:none;display:flex;align-items:center;gap:10px}
+.logo i{width:9px;height:9px;border-radius:50%;background:var(--matrice);box-shadow:0 0 12px var(--matrice)}
+.nav ul{display:flex;gap:22px;list-style:none;margin:0 0 0 auto;padding:0}
+.nav ul a{color:var(--lichen);text-decoration:none;font-size:.92rem}
+.nav ul a:hover{color:var(--ecume)}
+.bouton{display:inline-flex;align-items:center;gap:10px;font:600 .98rem/1 var(--texte);text-decoration:none;border-radius:999px;padding:14px 22px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.bouton.plein{background:var(--phosphore);color:#03140a}
+.bouton.plein:hover{transform:translateY(-1px);box-shadow:0 0 32px -6px var(--phosphore)}
+.bouton.creux{color:var(--ecume);border:1px solid var(--trait)}
+.bouton.creux:hover{border-color:var(--phosphore)}
+.nav .bouton{padding:10px 16px;font-size:.88rem}
+@media (max-width:860px){.nav ul{display:none}.nav .bouton{margin-left:auto}}
+
+/* ---------- ouverture ---------- */
+.ouverture{position:relative;overflow:hidden;padding-block:clamp(56px,8vw,104px) clamp(56px,7vw,96px)}
+#pluie{position:absolute;inset:0;width:100%;height:100%;opacity:.32;pointer-events:none}
+.ouverture::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 60% at 30% 35%,rgba(3,8,5,.55),transparent 70%),linear-gradient(to bottom,transparent 55%,var(--nuit))}
+.ouverture .cadre{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(32px,5vw,64px);align-items:center}
+@media (max-width:900px){.ouverture .cadre{grid-template-columns:minmax(0,1fr)}}
+.ouverture h1{font-size:clamp(2.6rem,6.4vw,5rem);font-weight:700;margin:18px 0 22px}
+.ouverture h1 em{font-style:normal;color:var(--phosphore)}
+.ouverture .chapeau{font-size:1.18rem}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.version{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--trait);border-radius:999px;padding:6px 14px 6px 6px;font:500 .85rem/1 var(--texte);color:var(--lichen);background:rgba(7,19,11,.7)}
+.version b{font:600 .72rem/1 var(--mono);letter-spacing:.08em;background:var(--phosphore);color:#03140a;padding:5px 9px;border-radius:999px}
+.fenetre{border:1px solid var(--trait);border-radius:var(--rayon);overflow:hidden;background:var(--sous-bois);box-shadow:0 30px 80px -30px rgba(0,255,65,.25),0 0 0 1px rgba(125,255,168,.04)}
+.fenetre .barre{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--trait);font:500 .78rem/1 var(--mono);color:var(--lichen)}
+.fenetre .barre span{width:8px;height:8px;border-radius:50%;background:var(--trait)}
+.fenetre .barre code{margin-left:8px}
+.echange{padding:16px;display:grid;gap:12px}
+.moi{justify-self:end;max-width:86%;background:var(--mousse);border:1px solid var(--trait);border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:.92rem;line-height:1.45}
+.reponse{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--trait)}
+.reponse img{width:100%;aspect-ratio:4/5;object-fit:cover;object-position:50% 30%}
+.reponse .etat{position:absolute;left:10px;right:10px;bottom:10px;font:500 .74rem/1.4 var(--mono);color:var(--phosphore);background:rgba(3,8,5,.82);padding:8px 10px;border-radius:8px}
+@media (min-width:901px){.reponse img{max-height:520px}}
+.preuves{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin-top:clamp(48px,6vw,72px);background:var(--trait);border:1px solid var(--trait);border-radius:var(--rayon);overflow:hidden}
+@media (max-width:720px){.preuves{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.preuves div{background:rgba(7,19,11,.92);padding:22px 20px;display:grid;gap:6px}
+.preuves b{font:700 clamp(1.7rem,3.4vw,2.4rem)/1 var(--titre);font-variant-numeric:tabular-nums;color:var(--ecume)}
+.preuves span{color:var(--lichen);font-size:.9rem;line-height:1.4}
+
+/* ---------- visages ---------- */
+.visages{background:linear-gradient(to bottom,var(--nuit),#050d07 40%,var(--nuit))}
+.mur{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.mur{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mur figure{margin:0;position:relative;border-radius:var(--rayon);overflow:hidden;background:var(--sous-bois);aspect-ratio:9/16}
+.mur figure:nth-child(3n+2){transform:translateY(36px)}
+@media (max-width:900px){.mur figure:nth-child(3n+2){transform:none}.mur figure:nth-child(2n){transform:translateY(28px)}}
+.mur img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+.mur figure:hover img{transform:scale(1.035)}
+.mur figcaption{position:absolute;inset:auto 0 0;padding:44px 16px 14px;background:linear-gradient(to top,rgba(3,8,5,.92),transparent);font-size:.86rem;line-height:1.4;color:var(--ecume)}
+.mur figcaption small{display:block;font:500 .72rem/1.3 var(--mono);color:var(--lichen);margin-top:4px;letter-spacing:.02em}
+.note{color:var(--lichen);font-size:.88rem;margin-top:clamp(52px,6vw,72px)}
+
+.comparateur{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,4vw,56px);align-items:center;margin-top:clamp(72px,9vw,112px)}
+@media (max-width:860px){.comparateur{grid-template-columns:minmax(0,1fr)}}
+.avant-apres{position:relative;aspect-ratio:1/1;border-radius:var(--rayon);overflow:hidden;border:1px solid var(--trait);user-select:none;touch-action:pan-y}
+.avant-apres img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.avant-apres .haut{clip-path:inset(0 calc(100% - var(--pos,50%)) 0 0)}
+.avant-apres .poignee{position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;background:var(--phosphore);box-shadow:0 0 14px var(--phosphore);pointer-events:none}
+.avant-apres .poignee::after{content:"⟷";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:var(--nuit);border:2px solid var(--phosphore);color:var(--phosphore);display:grid;place-items:center;font-size:18px}
+.avant-apres input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+.avant-apres .lib{position:absolute;top:12px;font:600 .72rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:7px 10px;border-radius:999px;background:rgba(3,8,5,.78);pointer-events:none}
+.avant-apres .lib.g{left:12px;color:var(--lichen)}
+.avant-apres .lib.d{right:12px;color:var(--phosphore)}
+.etapes{display:grid;gap:14px;margin-top:22px;counter-reset:e}
+.etapes div{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;align-items:start}
+.etapes div::before{counter-increment:e;content:counter(e);font:600 .85rem/34px var(--mono);text-align:center;border:1px solid var(--trait);border-radius:50%;color:var(--phosphore);height:34px}
+.etapes b{display:block;font-family:var(--titre);font-weight:600}
+.etapes span{color:var(--lichen);font-size:.95rem}
+
+/* ---------- pourquoi ---------- */
+.raisons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(28px,4vw,48px) clamp(24px,3vw,40px)}
+@media (max-width:860px){.raisons{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.raisons{grid-template-columns:minmax(0,1fr)}}
+.raison{display:grid;gap:10px;align-content:start;border-top:1px solid var(--trait);padding-top:20px}
+.raison .k{font:600 .75rem/1 var(--mono);color:var(--phosphore);letter-spacing:.1em;text-transform:uppercase}
+.raison p{color:var(--lichen)}
+
+/* ---------- V1 -> V2 ---------- */
+.v2{background:var(--sous-bois);border-block:1px solid var(--trait)}
+.frise{display:flex;align-items:center;gap:14px;font:500 .9rem/1.3 var(--mono);color:var(--lichen);flex-wrap:wrap;margin-top:6px}
+.frise .ligne{flex:1 1 80px;height:1px;background:linear-gradient(90deg,var(--cendre),var(--phosphore));min-width:40px}
+.frise b{color:var(--ecume);font-weight:600}
+.compteurs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:clamp(40px,5vw,64px)}
+@media (max-width:860px){.compteurs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.compteur{background:var(--nuit);border:1px solid var(--trait);border-radius:var(--rayon);padding:20px;display:grid;gap:8px}
+.compteur .q{font-size:.88rem;color:var(--lichen)}
+.compteur .v{display:flex;align-items:baseline;gap:10px;font-family:var(--titre);font-variant-numeric:tabular-nums}
+.compteur .v s{color:var(--cendre);text-decoration:none;font-size:1.3rem}
+.compteur .v s::after{content:" →";color:var(--trait)}
+.compteur .v b{font-size:2.3rem;font-weight:700;color:var(--phosphore);line-height:1}
+.compteur .d{font:500 .78rem/1.3 var(--mono);color:var(--lichen)}
+
+.graphes{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(20px,3vw,32px)}
+@media (max-width:960px){.graphes{grid-template-columns:minmax(0,1fr)}}
+.graphe{background:var(--nuit);border:1px solid var(--trait);border-radius:var(--rayon);padding:clamp(20px,3vw,28px);display:grid;gap:18px;align-content:start;min-width:0}
+.graphe h3{font-size:1.25rem}
+.graphe .sous{color:var(--lichen);font-size:.9rem;margin-top:6px}
+.legende{display:flex;gap:18px;flex-wrap:wrap;font:500 .78rem/1 var(--mono);color:var(--lichen)}
+.legende i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+.legende .a{background:var(--cendre)}
+.legende .p{background:var(--phosphore);box-shadow:0 0 8px var(--phosphore)}
+
+.haltere{display:grid;gap:22px}
+.haltere .r{display:grid;gap:8px}
+.haltere .t{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.95rem}
+.haltere .t b{font-weight:500}
+.haltere .t span{font:600 .82rem/1.5 var(--mono);color:var(--phosphore);white-space:nowrap}
+.piste{position:relative;height:22px;margin-top:14px}
+.piste::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--trait)}
+.piste .lien{position:absolute;top:50%;height:2px;margin-top:-1px;background:linear-gradient(90deg,var(--phosphore),var(--cendre))}
+.piste .plage{position:absolute;top:50%;height:10px;margin-top:-5px;border-radius:999px}
+.piste .plage.a{background:rgba(91,117,100,.55)}
+.piste .plage.p{background:var(--phosphore);box-shadow:0 0 10px var(--phosphore)}
+.piste .pt{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%}
+.piste .pt.a{background:var(--cendre)}
+.piste .pt.p{background:var(--phosphore);box-shadow:0 0 10px var(--phosphore)}
+.piste .val{position:absolute;bottom:100%;transform:translateX(-50%);font:500 .7rem/1 var(--mono);color:var(--lichen);white-space:nowrap;margin-bottom:2px}
+.axe{position:relative;height:20px;border-top:1px solid var(--trait);font:500 .7rem/1 var(--mono);color:var(--lichen)}
+.axe span{position:absolute;top:6px;transform:translateX(-50%);white-space:nowrap}
+.axe span:first-child{transform:none}
+.axe span:last-child{transform:translateX(-100%)}
+
+.barres{display:grid;gap:14px}
+.barres .r{display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;align-items:center}
+@media (max-width:420px){.barres .r{grid-template-columns:minmax(0,1fr)}}
+.barres .n{font-size:.92rem}
+.barres .n.g{font-weight:600}
+.barres .duo{display:grid;gap:4px}
+.barres .b{position:relative;height:12px;border-radius:0 6px 6px 0;background:var(--cendre);min-width:2px}
+.barres .b.p{background:var(--phosphore)}
+.barres .b em{position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);font:600 .74rem/1 var(--mono);font-style:normal;color:var(--lichen);white-space:nowrap}
+.barres .b.p em{color:var(--phosphore)}
+.barres .duo{padding-right:44px}
+
+.table-defile{overflow-x:auto;margin-top:clamp(40px,5vw,64px);border:1px solid var(--trait);border-radius:var(--rayon);background:var(--nuit)}
+table{width:100%;border-collapse:collapse;min-width:640px;font-size:.95rem}
+th,td{text-align:left;padding:14px 18px;border-bottom:1px solid var(--trait);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:600 .72rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--lichen);background:var(--sous-bois)}
+td:first-child{font-weight:600;font-family:var(--titre);white-space:nowrap}
+td:nth-child(2){color:var(--cendre)}
+td:nth-child(3){color:var(--ecume)}
+td:nth-child(3) b{color:var(--phosphore);font-weight:600}
+
+/* ---------- retouche ---------- */
+.retouche{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+@media (max-width:720px){.retouche{grid-template-columns:repeat(2,minmax(0,1fr))}.retouche figure:last-child{grid-column:1/-1}}
+.retouche figure{margin:0;display:grid;gap:10px}
+.retouche .img{border-radius:12px;overflow:hidden;border:1px solid var(--trait);background:var(--sous-bois);aspect-ratio:300/532;display:grid;place-items:center}
+.retouche .img img{width:100%;height:100%;object-fit:cover}
+.retouche .img.large img{height:auto;object-fit:contain}
+.retouche figcaption{font-size:.88rem;color:var(--lichen);line-height:1.45}
+.retouche figcaption b{display:block;color:var(--ecume);font-family:var(--titre);font-size:1rem}
+.retouche figure.ok .img{border-color:var(--phosphore)}
+.consigne{font:500 .95rem/1.5 var(--mono);color:var(--ecume);background:var(--sous-bois);border:1px dashed var(--trait);border-radius:12px;padding:14px 16px;margin-bottom:18px}
+.consigne span{color:var(--lichen)}
+
+/* ---------- galerie ---------- */
+.galerie{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.galerie figure{margin:0;border-radius:var(--rayon);overflow:hidden;position:relative;background:var(--sous-bois)}
+.galerie figure:nth-child(1){grid-column:span 4;grid-row:span 2}
+.galerie figure:nth-child(2),.galerie figure:nth-child(3){grid-column:span 2}
+.galerie figure:nth-child(4),.galerie figure:nth-child(5){grid-column:span 3}
+.galerie img{width:100%;height:100%;object-fit:cover;aspect-ratio:16/9}
+.galerie figure:nth-child(1) img{aspect-ratio:auto}
+.galerie figcaption{position:absolute;left:12px;bottom:12px;font:500 .74rem/1 var(--mono);background:rgba(3,8,5,.8);color:var(--ecume);padding:7px 10px;border-radius:999px}
+@media (max-width:760px){.galerie{grid-template-columns:minmax(0,1fr)}.galerie figure:nth-child(n){grid-column:auto;grid-row:auto}.galerie figure:nth-child(1) img{aspect-ratio:16/9}}
+
+/* ---------- 3D ---------- */
+.atelier{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(20px,3vw,36px);align-items:stretch}
+@media (max-width:900px){.atelier{grid-template-columns:minmax(0,1fr)}}
+.visionneuse{position:relative;border:1px solid var(--trait);border-radius:var(--rayon);overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#0f2a19,var(--nuit) 75%);aspect-ratio:4/3;max-width:100%}
+@media (max-width:600px){.visionneuse{aspect-ratio:1/1}}
+.visionneuse canvas,.visionneuse img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;touch-action:none;cursor:grab}
+.visionneuse canvas:active{cursor:grabbing}
+.visionneuse [hidden]{display:none}
+.onglets3d{position:absolute;top:12px;left:12px;display:flex;gap:6px;flex-wrap:wrap}
+.onglets3d button{font:500 .8rem/1 var(--texte);color:var(--lichen);background:rgba(3,8,5,.8);border:1px solid var(--trait);border-radius:999px;padding:9px 14px;cursor:pointer}
+.onglets3d button[aria-selected="true"]{color:#03140a;background:var(--phosphore);border-color:var(--phosphore)}
+.aide3d{position:absolute;right:12px;bottom:12px;font:500 .7rem/1.3 var(--mono);color:var(--lichen);background:rgba(3,8,5,.7);padding:6px 9px;border-radius:8px;pointer-events:none}
+.fiche3d{display:grid;gap:18px;align-content:start}
+.fiche3d .consigne{margin:0}
+.fiche3d dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:0;background:var(--trait);border:1px solid var(--trait);border-radius:12px;overflow:hidden}
+.fiche3d dl div{background:var(--nuit);padding:14px 16px;display:grid;gap:4px}
+.fiche3d dt{font:600 .7rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--lichen)}
+.fiche3d dd{margin:0;font:600 1.05rem/1.3 var(--titre);font-variant-numeric:tabular-nums}
+.fiche3d .sous{color:var(--lichen);font-size:.95rem;margin-top:14px}
+.chaine3d{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.chaine3d li{font:500 .78rem/1 var(--mono);color:var(--ecume);border:1px solid var(--trait);border-radius:999px;padding:8px 12px}
+.chaine3d li:not(:last-child)::after{content:" →";color:var(--phosphore)}
+
+/* ---------- capacités ---------- */
+.capacites{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--trait);border:1px solid var(--trait);border-radius:var(--rayon);overflow:hidden}
+@media (max-width:960px){.capacites{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.capacites{grid-template-columns:minmax(0,1fr)}}
+.capacite{background:var(--nuit);padding:24px 22px;display:grid;gap:8px;align-content:start}
+.capacite b{font-family:var(--titre);font-size:1.08rem;font-weight:600}
+.capacite p{color:var(--lichen);font-size:.93rem;line-height:1.55}
+.capacite code{font:500 .8rem var(--mono);color:var(--phosphore)}
+
+/* ---------- architecture ---------- */
+.archi{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;align-items:stretch}
+@media (max-width:900px){.archi{grid-template-columns:minmax(0,1fr)}}
+.machine{position:relative;border:1.5px dashed var(--phosphore);border-radius:20px;padding:44px clamp(16px,3vw,28px) 24px;display:grid;gap:12px;background:radial-gradient(ellipse at top,rgba(125,255,168,.06),transparent 60%)}
+.machine>.titre-zone{position:absolute;top:-12px;left:22px;background:var(--nuit);padding:0 10px;font:600 .76rem/24px var(--mono);letter-spacing:.14em;color:var(--phosphore);text-transform:uppercase}
+.couche{display:grid;gap:12px}
+.couche.deux{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.couche.trois{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:620px){.couche.deux,.couche.trois{grid-template-columns:minmax(0,1fr)}}
+.boite{border:1px solid var(--trait);border-radius:12px;background:var(--sous-bois);padding:14px 16px;display:grid;gap:4px}
+.boite b{font-family:var(--titre);font-weight:600}
+.boite span{font-size:.86rem;color:var(--lichen);line-height:1.45}
+.boite.coeur{border-color:var(--phosphore);background:var(--mousse)}
+.boite.coeur b{color:var(--phosphore)}
+.fleche{height:22px;display:grid;place-items:center;color:var(--phosphore);font:600 .9rem/1 var(--mono)}
+.dehors{border:1px solid var(--trait);border-radius:20px;padding:22px;display:grid;gap:12px;align-content:start;background:var(--sous-bois)}
+.dehors .etiquette{color:var(--ambre)}
+.dehors p{color:var(--lichen);font-size:.93rem}
+.dehors ul{margin:0;padding-left:1.1em;color:var(--lichen);font-size:.93rem;display:grid;gap:4px}
+.socle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
+@media (max-width:720px){.socle{grid-template-columns:minmax(0,1fr)}}
+.socle div{border-top:1px solid var(--trait);padding-top:14px;display:grid;gap:4px}
+.socle b{font:700 1.6rem/1.1 var(--titre);font-variant-numeric:tabular-nums}
+.socle s{text-decoration:none;color:var(--cendre);font-size:.9rem;font-family:var(--mono)}
+.socle span{color:var(--lichen);font-size:.88rem}
+
+/* ---------- interface ---------- */
+.ecrans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.ecrans{grid-template-columns:minmax(0,1fr)}}
+.ecrans figure{margin:0;display:grid;gap:10px}
+.ecrans img{border-radius:12px;border:1px solid var(--trait);aspect-ratio:16/9;object-fit:cover;width:100%}
+.ecrans figcaption{font-size:.88rem;color:var(--lichen)}
+.peaux{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.peaux span{font:500 .8rem/1 var(--mono);padding:8px 12px;border-radius:999px;border:1px solid var(--trait);color:var(--lichen)}
+
+/* ---------- installer ---------- */
+.installer .cadre{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,4vw,56px)}
+@media (max-width:860px){.installer .cadre{grid-template-columns:minmax(0,1fr)}}
+.config{border:1px solid var(--trait);border-radius:var(--rayon);overflow:hidden}
+.config div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:12px;padding:16px 18px;border-bottom:1px solid var(--trait);background:var(--sous-bois)}
+.config div:last-child{border-bottom:0}
+.config b{font-family:var(--titre);font-weight:600}
+.config span{color:var(--lichen);font-size:.93rem}
+.bientot{border:1px solid rgba(255,210,122,.35);border-radius:var(--rayon);padding:18px 20px;margin-top:18px;display:grid;gap:8px;background:rgba(255,210,122,.04)}
+.bientot .etiquette{color:var(--ambre)}
+.bientot p{color:var(--lichen);font-size:.95rem}
+pre{margin:0;background:var(--sous-bois);border:1px solid var(--trait);border-radius:12px;padding:16px 18px;overflow-x:auto;font:500 .85rem/1.7 var(--mono);color:var(--ecume)}
+pre .c{color:var(--cendre)}
+.liens{display:grid;gap:10px;margin-top:18px}
+.liens a{display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid var(--trait);border-radius:12px;text-decoration:none;color:var(--ecume);transition:border-color .18s ease}
+.liens a:hover{border-color:var(--phosphore)}
+.liens a span{color:var(--lichen);font-size:.88rem}
+
+/* ---------- appel final ---------- */
+.final{text-align:left;border-top:1px solid var(--trait);background:radial-gradient(ellipse 60% 80% at 80% 100%,rgba(0,255,65,.08),transparent 70%)}
+.final h2{font-size:clamp(2.2rem,5.4vw,4rem);max-width:16ch}
+.final .actions{margin-top:28px}
+footer{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px;border-top:1px solid var(--trait);color:var(--lichen);font-size:.85rem}
+footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Navigation principale">
+  <div class="cadre">
+    <a class="logo" href="#haut"><i aria-hidden="true"></i>NÉO V2</a>
+    <ul>
+      <li><a href="#visages">Studio</a></li>
+      <li><a href="#pourquoi">Pourquoi Néo</a></li>
+      <li><a href="#v2">Nouveautés V2</a></li>
+      <li><a href="#trois-d">3D</a></li>
+      <li><a href="#architecture">Comment ça marche</a></li>
+      <li><a href="#installer">Installer</a></li>
+    </ul>
+    <a class="bouton creux" href="https://github.com/tony2marseille-droid/Neo-v2">GitHub</a>
+  </div>
+</nav>
+
+<header class="bande ouverture" id="haut">
+  <canvas id="pluie" aria-hidden="true"></canvas>
+  <div class="cadre">
+    <div>
+      <span class="version"><b>V2</b> Licence MIT · gratuit · open source</span>
+      <h1>Une IA complète.<br><em>Sur ton PC.</em><br>Rien ne sort.</h1>
+      <p class="chapeau">Néo discute, crée des images 4K, retouche tes photos, monte des vidéos, rédige tes documents Office, modélise en 3D et parle français. Tout tourne sur ta carte graphique&nbsp;: sans abonnement, sans compte, sans cloud.</p>
+      <div class="actions">
+        <a class="bouton plein" href="https://github.com/tony2marseille-droid/Neo-v2">Voir le code sur GitHub</a>
+        <a class="bouton creux" href="#installer">Comment l'installer</a>
+      </div>
+    </div>
+    <div class="fenetre">
+      <div class="barre"><span></span><span></span><span></span><code>néo — 127.0.0.1:8320</code></div>
+      <div class="echange">
+        <p class="moi">portrait d'une jeune femme aux taches de rousseur et aux cheveux cuivrés, lumière douce d'une fenêtre, rendu argentique</p>
+        <div class="reponse">
+          <img src="medias/portrait_2.jpg" alt="Portrait généré par Néo à partir de cette phrase&nbsp;: jeune femme rousse aux taches de rousseur" width="1200" height="2133">
+          <span class="etat">✓ 2160×3840 · vérifiée par la vision, note 9/10 · 75 s</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cadre preuves">
+    <div><b>62</b><span>outils que Néo sait utiliser seul</span></div>
+    <div><b>9</b><span>agents spécialisés, un seul routeur</span></div>
+    <div><b>3840×2160</b><span>pixels par image, générée en local</span></div>
+    <div><b>8 Mo</b><span>de mémoire pour le serveur Rust</span></div>
+  </div>
+</header>
+
+<section class="bande visages" id="visages">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">Studio image · photoréalisme</span>
+      <h2>Aucune de ces personnes n'existe.</h2>
+      <p class="chapeau">Chaque portrait a été demandé à Néo en une phrase, en français, puis peint et vérifié sur une seule carte graphique grand public. Aucune image n'a quitté la machine.</p>
+    </div>
+    <div class="mur">
+      <figure><img src="medias/portrait_1.jpg" alt="Portrait généré d'un vieux marin breton en ciré jaune, lumière dorée" loading="lazy"><figcaption>Vieux marin breton, ciré jaune, lumière dorée de fin de journée<small>Néo V2 · RTX 5080 · local</small></figcaption></figure>
+      <figure><img src="medias/portrait_2.jpg" alt="Portrait généré d'une jeune femme rousse aux taches de rousseur" loading="lazy"><figcaption>Jeune femme aux taches de rousseur, lumière de fenêtre, rendu argentique<small>Néo V2 · RTX 5080 · local</small></figcaption></figure>
+      <figure><img src="medias/portrait_3.jpg" alt="Portrait généré d'un forgeron devant sa forge, étincelles" loading="lazy"><figcaption>Forgeron devant sa forge, étincelles, lumière du feu<small>Néo V2 · RTX 5080 · local</small></figcaption></figure>
+      <figure><img src="medias/portrait_4.jpg" alt="Portrait généré d'une danseuse de flamenco âgée, éclairage Rembrandt" loading="lazy"><figcaption>Danseuse de flamenco, peigne en écaille, éclairage Rembrandt<small>Néo V2 · RTX 5080 · local</small></figcaption></figure>
+      <figure><img src="medias/portrait_5.jpg" alt="Portrait généré d'un vieux moine tibétain souriant, montagnes enneigées" loading="lazy"><figcaption>Vieux moine tibétain, montagnes enneigées, lumière du matin<small>Néo V2 · RTX 5080 · local</small></figcaption></figure>
+      <figure><img src="medias/portrait_6.jpg" alt="Portrait généré d'une astronaute, la Terre reflétée dans sa visière" loading="lazy"><figcaption>Astronaute dans son casque, lueur des écrans du cockpit<small>Néo V2 · RTX 5080 · local</small></figcaption></figure>
+    </div>
+
+    <div class="comparateur">
+      <div class="avant-apres" id="comparer" style="--pos:50%">
+        <img src="medias/visage_apres.jpg" alt="Détail d'un visage après la passe de détail&nbsp;: grain de peau et cils nets" loading="lazy">
+        <img class="haut" src="medias/visage_avant.jpg" alt="Le même détail avant la passe&nbsp;: peau lisse et floue" loading="lazy">
+        <span class="lib g">Avant</span><span class="lib d">Néo V2</span>
+        <div class="poignee" aria-hidden="true"></div>
+        <label class="sr" for="curseur" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Comparer avant et après</label>
+        <input type="range" id="curseur" min="0" max="100" value="50">
+      </div>
+      <div>
+        <span class="etiquette">Fais glisser le curseur</span>
+        <h3 style="font-size:clamp(1.5rem,2.6vw,2rem);margin-top:14px">Le secret des visages&nbsp;: trois passes de plus.</h3>
+        <p class="chapeau" style="margin-top:14px">Les générateurs d'images lissent la peau et noient les yeux. Néo repère chaque visage et le retravaille.</p>
+        <div class="etapes">
+          <div><p><b>Comprendre</b><span>Le modèle de conversation transforme ta phrase en brief d'artiste&nbsp;: cadrage, lumière, matières.</span></p></div>
+          <div><p><b>Peindre</b><span>Z-Image-Turbo peint en 3840×2160, puis une passe « visage » ajoute le grain de peau sans changer la personne.</span></p></div>
+          <div><p><b>Affiner les yeux</b><span>Une passe dédiée redonne un iris structuré et une pupille nette, en 11 secondes environ.</span></p></div>
+          <div><p><b>Vérifier</b><span>La vision de Néo relit l'image et contrôle que tout ce que tu as demandé y figure.</span></p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bande" id="pourquoi">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">Pourquoi Néo</span>
+      <h2>Ce que les assistants en ligne ne te donneront jamais.</h2>
+    </div>
+    <div class="raisons">
+      <div class="raison"><span class="k">Confidentialité</span><h3>Tes données restent chez toi</h3><p>Conversations, documents, photos et mémoire sont stockés sur ton disque. Rien n'est envoyé à une entreprise, rien ne sert à entraîner le modèle de quelqu'un d'autre.</p></div>
+      <div class="raison"><span class="k">Coût</span><h3>Gratuit, et ça le restera</h3><p>Code sous licence MIT, modèles open source, aucun abonnement, aucune limite de messages. Ta carte graphique fait le travail.</p></div>
+      <div class="raison"><span class="k">Langue</span><h3>Pensé en français</h3><p>Personnalité, dictée, voix et documents en français. Les montants s'écrivent « 1 234,50 € » et les formules Excel calculent la TVA.</p></div>
+      <div class="raison"><span class="k">Tout-en-un</span><h3>Une seule application</h3><p>Conversation, studio photo, montage vidéo, bureautique, 3D, recherche web et voix. Plus besoin de jongler entre six services.</p></div>
+      <div class="raison"><span class="k">Action</span><h3>Il agit, il ne fait pas que parler</h3><p>Néo choisit lui-même parmi 62 outils&nbsp;: il crée le fichier Excel, prépare l'impression 3D, ouvre une application, cherche une source et te la cite.</p></div>
+      <div class="raison"><span class="k">Progrès</span><h3>Il s'améliore avec toi</h3><p>Tes notes et sa propre auto-évaluation alimentent un coach hebdomadaire. Tu peux même entraîner ton propre modèle, testé avant d'être adopté.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="bande v2" id="v2">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">De la V1 à la V2</span>
+      <h2>Trois semaines de travail, mesurées.</h2>
+      <div class="frise"><b>V1 · 25 oct. 2026</b><span class="ligne" aria-hidden="true"></span><span>77 commits · +43 642 lignes</span><span class="ligne" aria-hidden="true"></span><b>V2 · 11 nov. 2026</b></div>
+    </div>
+
+    <div class="compteurs">
+      <div class="compteur"><span class="q">Agents spécialisés</span><div class="v"><s>7</s><b>9</b></div><span class="d">+ recherche web, dépôt de code</span></div>
+      <div class="compteur"><span class="q">Outils disponibles</span><div class="v"><s>41</s><b>62</b></div><span class="d">+51 %</span></div>
+      <div class="compteur"><span class="q">Tests automatisés</span><div class="v"><s>4</s><b>340</b></div><span class="d">209 Python · 107 Rust · 24 interface</span></div>
+      <div class="compteur"><span class="q">Score de conversation</span><div class="v"><s>84,4</s><b>93,7</b></div><span class="d">sur 100 · banc de 27 questions</span></div>
+    </div>
+
+    <div class="graphes">
+      <div class="graphe">
+        <div>
+          <h3>Moins d'attente, à chaque étape</h3>
+          <p class="sous">Durée en secondes sur la machine de référence. Plus le point vert est à gauche, mieux c'est.</p>
+        </div>
+        <div class="legende"><span><i class="a"></i>Avant</span><span><i class="p"></i>Néo V2</span></div>
+        <div class="haltere">
+          <div class="r">
+            <div class="t"><b>Retoucher une photo</b><span>9 à 27× plus rapide</span></div>
+            <div class="piste">
+              <div class="lien" style="left:7.27%;width:56.37%"></div>
+              <div class="plage a" style="left:63.64%;width:35.45%"></div>
+              <div class="plage p" style="left:3.64%;width:3.63%"></div>
+              <span class="val" style="left:81.4%">140–218 s</span>
+              <span class="val" style="left:5.5%;color:var(--phosphore)">8–16 s</span>
+            </div>
+          </div>
+          <div class="r">
+            <div class="t"><b>Créer une image 4K (outil complet)</b><span>−37 %</span></div>
+            <div class="piste">
+              <div class="lien" style="left:36.36%;width:20.91%"></div>
+              <div class="pt a" style="left:57.27%"></div>
+              <div class="pt p" style="left:36.36%"></div>
+              <span class="val" style="left:57.27%">126 s</span>
+              <span class="val" style="left:36.36%;color:var(--phosphore)">~80 s</span>
+            </div>
+          </div>
+          <div class="r">
+            <div class="t"><b>Animer un plan vidéo de 3 s</b><span>−35 %</span></div>
+            <div class="piste">
+              <div class="lien" style="left:50%;width:27.27%"></div>
+              <div class="pt a" style="left:77.27%"></div>
+              <div class="pt p" style="left:50%"></div>
+              <span class="val" style="left:77.27%">~170 s</span>
+              <span class="val" style="left:50%;color:var(--phosphore)">~110 s</span>
+            </div>
+          </div>
+          <div class="r">
+            <div class="t"><b>Image du banc d'essai (moyenne de 3)</b><span>−23 %</span></div>
+            <div class="piste">
+              <div class="lien" style="left:33.59%;width:9.86%"></div>
+              <div class="pt a" style="left:43.45%"></div>
+              <div class="pt p" style="left:33.59%"></div>
+              <span class="val" style="left:46%">95,6 s</span>
+              <span class="val" style="left:31%;color:var(--phosphore)">73,9 s</span>
+            </div>
+          </div>
+          <div class="axe" aria-hidden="true"><span style="left:0">0 s</span><span style="left:22.73%">50</span><span style="left:45.45%">100</span><span style="left:68.18%">150</span><span style="left:100%">220 s</span></div>
+        </div>
+      </div>
+
+      <div class="graphe">
+        <div>
+          <h3>Des réponses plus justes</h3>
+          <p class="sous">Banc de 27 questions noté sur 100 par un juge automatique, avant et après la refonte de novembre.</p>
+        </div>
+        <div class="legende"><span><i class="a"></i>Avant</span><span><i class="p"></i>Néo V2</span></div>
+        <div class="barres">
+          <div class="r"><span class="n g">Score global</span><div class="duo"><div class="b" style="width:84.4%"><em>84,4</em></div><div class="b p" style="width:93.7%"><em>93,7</em></div></div></div>
+          <div class="r"><span class="n">Identité</span><div class="duo"><div class="b" style="width:30%"><em>30</em></div><div class="b p" style="width:95%"><em>95</em></div></div></div>
+          <div class="r"><span class="n">Code</span><div class="duo"><div class="b" style="width:80%"><em>80</em></div><div class="b p" style="width:100%"><em>100</em></div></div></div>
+          <div class="r"><span class="n">Conversation</span><div class="duo"><div class="b" style="width:88%"><em>88</em></div><div class="b p" style="width:92%"><em>92</em></div></div></div>
+          <div class="r"><span class="n">Raisonnement</span><div class="duo"><div class="b" style="width:91.7%"><em>91,7</em></div><div class="b p" style="width:91.7%"><em>91,7</em></div></div></div>
+          <div class="r"><span class="n">Explication</span><div class="duo"><div class="b" style="width:93.3%"><em>93,3</em></div><div class="b p" style="width:93.3%"><em>93,3</em></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-defile">
+      <table>
+        <thead><tr><th>Domaine</th><th>V1 (octobre)</th><th>V2 (novembre)</th></tr></thead>
+        <tbody>
+          <tr><td>Cerveau</td><td>Qwen3 8B + un second modèle pour la vision</td><td><b>Gemma 4 12B</b>, qui voit et raisonne dans un seul modèle</td></tr>
+          <tr><td>Images 4K</td><td>FLUX schnell / Kontext + agrandissement</td><td><b>Z-Image-Turbo en 3840×2160</b>, brief d'artiste, passes visage et yeux, vérification par la vision</td></tr>
+          <tr><td>Retouche</td><td>FLUX Kontext, 140 à 218 s, scène recréée</td><td><b>FLUX.2-klein en 8 à 16 s</b>, visage et cadrage conservés, 22 filtres en direct</td></tr>
+          <tr><td>Vidéo</td><td>absente</td><td><b>Storyboard → Wan 2.2 → montage</b> : un vrai mouvement, pas un simple zoom</td></tr>
+          <tr><td>Documents</td><td>Word, PDF, Excel</td><td><b>+ PowerPoint</b>, formules Excel vérifiées, montants à la française</td></tr>
+          <tr><td>Connaissances</td><td>absentes</td><td><b>Fiches</b> (résumé, points clés, sources) que Néo réutilise</td></tr>
+          <tr><td>3D</td><td>TripoSR, d'après une photo</td><td><b>Pièces paramétriques en 3 s</b> et Hunyuan3D d'après une simple phrase</td></tr>
+          <tr><td>Voix</td><td>Whisper + voix Windows</td><td><b>Parakeet</b> pour la dictée et <b>Piper</b>, une voix neuronale française</td></tr>
+          <tr><td>Interface</td><td>un thème Matrix</td><td><b>5 thèmes</b>, 97,5 % des couleurs pilotées par le thème</td></tr>
+          <tr><td>Fiabilité</td><td>4 tests automatisés</td><td><b>340 tests</b>, intégration continue sur GitHub</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="bande" id="retouche">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">Retouche par consigne</span>
+      <h2>Tu demandes une retouche. Pas une autre image.</h2>
+      <p class="chapeau">La V1 refaisait toute la scène pour changer un détail. La V2 ne touche qu'à ce que tu demandes, en quelques secondes.</p>
+    </div>
+    <p class="consigne"><span>consigne&nbsp;:</span> remplace le fond par un paysage de montagnes enneigées en plein jour, garde le guerrier tel quel</p>
+    <div class="retouche">
+      <figure><div class="img"><img src="medias/retouche_original.jpg" alt="Image d'origine&nbsp;: un guerrier barbu en armure sur fond sombre" loading="lazy"></div><figcaption><b>L'original</b>Image générée par Néo.</figcaption></figure>
+      <figure class="ok"><div class="img"><img src="medias/retouche_v2.jpg" alt="Retouche V2&nbsp;: même guerrier, même pose, fond de montagnes enneigées" loading="lazy"></div><figcaption><b>Néo V2 · 8 à 16 s</b>Même visage, même pose, même cadrage. Seul le décor a changé.</figcaption></figure>
+      <figure><div class="img large"><img src="medias/retouche_v1.jpg" alt="Retouche V1&nbsp;: la scène entière a été recréée, autre cadrage" loading="lazy"></div><figcaption><b>V1 · 140 à 218 s</b>Le décor est bon, mais tout le reste a été réinventé.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="bande" id="galerie" style="padding-top:0">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">Galerie 4K</span>
+      <h2>Du photoréalisme à l'imaginaire.</h2>
+    </div>
+    <div class="galerie">
+      <figure><img src="medias/mars.jpg" alt="Paysage martien généré en 4K" loading="lazy"><figcaption>3840×2160 · Mars</figcaption></figure>
+      <figure><img src="medias/dragon_feu.jpg" alt="Dragon de feu généré en 4K" loading="lazy"><figcaption>Dragon de feu</figcaption></figure>
+      <figure><img src="medias/dragon_glaces.jpg" alt="Dragon des glaces généré en 4K" loading="lazy"><figcaption>Dragon des glaces</figcaption></figure>
+      <figure><img src="medias/boulanger.jpg" alt="Boulanger dans son fournil, image générée" loading="lazy"><figcaption>Le boulanger</figcaption></figure>
+      <figure><img src="medias/sr71.jpg" alt="Avion SR-71 généré d'après une photo de référence" loading="lazy" style="aspect-ratio:16/9"><figcaption>SR-71 · sujet réel, fidèle à la référence</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="bande v2" id="trois-d">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">3D et impression</span>
+      <h2>De la phrase à l'objet imprimable.</h2>
+      <p class="chapeau">Décris une pièce ou une sculpture&nbsp;: Néo la modélise, vérifie qu'elle est imprimable et la prépare pour ton imprimante. Fais tourner le modèle avec la souris ou le doigt.</p>
+    </div>
+    <div class="atelier">
+      <div class="visionneuse">
+        <canvas id="scene3d" aria-label="Modèle 3D généré par Néo, que l'on peut faire tourner"></canvas>
+        <img id="repli3d" src="medias/dragon_rendu.jpg" alt="Rendu du buste de dragon généré par Néo" hidden>
+        <div class="onglets3d" role="tablist">
+          <button type="button" role="tab" aria-selected="true" data-modele="dragon">Buste de dragon</button>
+          <button type="button" role="tab" aria-selected="false" data-modele="support">Support de téléphone</button>
+        </div>
+        <span class="aide3d">Glisse pour tourner · molette ou pincement pour zoomer</span>
+      </div>
+      <div class="fiche3d">
+        <div class="fiche" data-fiche="dragon">
+          <p class="consigne"><span>demande&nbsp;:</span> buste de dragon majestueux, écailles détaillées, cornes recourbées, 90 mm</p>
+          <dl>
+            <div><dt>Moteur</dt><dd>Hunyuan3D, en local</dd></div>
+            <div><dt>Durée</dt><dd data-champ="dragon-duree">2 min 50 s</dd></div>
+            <div><dt>Maillage</dt><dd data-champ="dragon-faces">300 000 triangles, fermé</dd></div>
+            <div><dt>Taille</dt><dd data-champ="dragon-taille">53 × 62 × 90 mm</dd></div>
+          </dl>
+          <p class="sous">Néo dessine d'abord l'image de référence, puis en tire un volume fermé, prêt à trancher.</p>
+        </div>
+        <div class="fiche" data-fiche="support" hidden>
+          <p class="consigne"><span>demande&nbsp;:</span> un support de téléphone</p>
+          <dl>
+            <div><dt>Moteur</dt><dd>Gabarit paramétrique</dd></div>
+            <div><dt>Durée</dt><dd data-champ="support-duree">35 s</dd></div>
+            <div><dt>Maillage</dt><dd data-champ="support-faces">52 triangles, fermé</dd></div>
+            <div><dt>Taille</dt><dd data-champ="support-taille">90 × 81 × 99 mm</dd></div>
+          </dl>
+          <p class="sous">Néo reconnaît un objet courant et prend son gabarit&nbsp;: cotes exactes, géométrie vérifiée, verdict «&nbsp;imprimable&nbsp;» et fichier 3MF prêt pour le trancheur.</p>
+        </div>
+        <ul class="chaine3d">
+          <li>Description en français</li><li>Modèle 3D</li><li>Contrôles automatiques</li><li>STL / 3MF</li><li>G-code pour ton imprimante</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bande" id="capacites">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">Ce que fait Néo</span>
+      <h2>Un assistant, huit métiers.</h2>
+    </div>
+    <div class="capacites">
+      <div class="capacite"><b>Conversation</b><p>Un personnage chaleureux qui réfléchit avant de répondre, voit tes images et se souvient du contexte.</p></div>
+      <div class="capacite"><b>Images et retouche</b><p>4K photoréaliste, retouche par consigne, 22 filtres avec aperçu immédiat.</p></div>
+      <div class="capacite"><b>Vidéo</b><p>Du storyboard au clip monté&nbsp;: image de chaque plan, mouvement Wan 2.2, montage ffmpeg.</p></div>
+      <div class="capacite"><b>Bureautique</b><p>Word, PDF, Excel et PowerPoint mis en page, avec des formules qui calculent juste.</p></div>
+      <div class="capacite"><b>Documents et recherche</b><p>Pose une question à tes PDF&nbsp;: la réponse cite ses sources. Recherche web en plusieurs étapes.</p></div>
+      <div class="capacite"><b>3D et impression</b><p>Pièces paramétriques, formes organiques, rendus Blender et G-code prêt à imprimer.</p></div>
+      <div class="capacite"><b>Voix</b><p>Mot d'éveil, dictée en français et voix neuronale, aussi depuis un autre appareil du réseau.</p></div>
+      <div class="capacite"><b>Pour les développeurs</b><p>API compatible OpenAI sur <code>/v1</code>, serveur <code>MCP</code>, métriques et traces.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="bande" id="architecture">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">Comment ça marche</span>
+      <h2>Tout se passe à l'intérieur de ta machine.</h2>
+      <p class="chapeau">Un serveur Rust ultra-léger orchestre les modèles et les outils. Internet n'intervient que si tu le demandes.</p>
+    </div>
+    <div class="archi">
+      <div class="machine">
+        <span class="titre-zone">Ton ordinateur</span>
+        <div class="couche trois">
+          <div class="boite"><b>Navigateur</b><span>l'interface de Néo</span></div>
+          <div class="boite"><b>Voix</b><span>micro et haut-parleurs du réseau local</span></div>
+          <div class="boite"><b>Applications</b><span>API OpenAI et MCP</span></div>
+        </div>
+        <div class="fleche" aria-hidden="true">↓</div>
+        <div class="boite coeur"><b>Serveur Néo · Rust</b><span>Choisit l'agent, enchaîne les outils, applique les garde-fous, met les longues tâches en file. 8 Mo de mémoire.</span></div>
+        <div class="fleche" aria-hidden="true">↓</div>
+        <div class="couche deux">
+          <div class="boite"><b>62 outils · Python</b><span>images, vidéo, documents, 3D, fiches, web, voix</span></div>
+          <div class="boite"><b>Modèles · Ollama</b><span>Gemma 4 pour parler et voir, Qwen3 pour la recherche dans tes documents</span></div>
+        </div>
+        <div class="fleche" aria-hidden="true">↓</div>
+        <div class="boite"><b>Ta carte graphique</b><span>une génération à la fois, sous verrou&nbsp;: la machine ne s'emballe jamais</span></div>
+      </div>
+      <div class="dehors">
+        <span class="etiquette">Internet · seulement à ta demande</span>
+        <p>Quelques outils interrogent un service public quand tu leur demandes&nbsp;:</p>
+        <ul>
+          <li>recherche web et pages citées</li>
+          <li>météo (Open-Meteo)</li>
+          <li>taux de change (BCE)</li>
+          <li>adresses (IGN)</li>
+          <li>Telegram, si tu l'actives</li>
+        </ul>
+        <p>Tes conversations et tes fichiers, eux, ne sortent jamais.</p>
+      </div>
+    </div>
+    <div class="socle">
+      <div><s>34,8 Mo →</s><b>8,1 Mo</b><span>mémoire du serveur après le passage de Python à Rust</span></div>
+      <div><s>0,90 ms →</s><b>0,46 ms</b><span>temps de réponse médian du serveur</span></div>
+      <div><s>1 458 →</s><b>3 680 req/s</b><span>débit, soit 2,5 fois plus</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="bande v2" id="interface">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">L'interface</span>
+      <h2>Belle dès le premier lancement.</h2>
+      <p class="chapeau">Un assistant d'installation détecte ta carte graphique et propose les modèles adaptés. Cinq thèmes, du terminal Matrix au pastel.</p>
+    </div>
+    <div class="ecrans">
+      <figure><img src="medias/ui_accueil.jpg" alt="Écran d'accueil de Néo" loading="lazy"><figcaption>L'accueil et l'état de la machine</figcaption></figure>
+      <figure><img src="medias/ui_chat.jpg" alt="Conversation avec Néo" loading="lazy"><figcaption>La conversation, avec les outils en direct</figcaption></figure>
+      <figure><img src="medias/ui_documents.jpg" alt="Gestion des documents dans Néo" loading="lazy"><figcaption>Tes documents, interrogeables</figcaption></figure>
+    </div>
+    <div class="peaux" aria-label="Thèmes disponibles"><span>Oracle</span><span>Cyberpunk</span><span>Rétro</span><span>Aurore</span><span>Cartoon</span></div>
+  </div>
+</section>
+
+<section class="bande installer" id="installer">
+  <div class="cadre">
+    <div>
+      <div class="entete" style="margin-bottom:28px">
+        <span class="etiquette">Installer</span>
+        <h2>Ce qu'il te faut.</h2>
+      </div>
+      <div class="config">
+        <div><b>Système</b><span>Windows 10 ou 11 (Linux via Docker)</span></div>
+        <div><b>Conversation</b><span>carte NVIDIA 8 Go, 32 Go de mémoire</span></div>
+        <div><b>Studio 4K, vidéo, 3D</b><span>carte NVIDIA 16 Go, 48 Go de mémoire</span></div>
+        <div><b>Disque</b><span>un SSD avec de la place pour les modèles</span></div>
+      </div>
+      <div class="bientot">
+        <span class="etiquette">En préparation</span>
+        <p>Un installateur qui s'adapte à ta machine&nbsp;: il détecte ta carte, active seulement ce qu'elle sait faire, et propose un mode sans carte graphique.</p>
+      </div>
+    </div>
+    <div>
+      <pre><span class="c"># 1. Récupérer Néo</span>
+git clone https://github.com/tony2marseille-droid/Neo-v2
+<span class="c"># 2. Suivre le guide pas à pas</span>
+docs/DEPLOIEMENT.md
+<span class="c"># 3. Ouvrir Néo</span>
+http://127.0.0.1:8320</pre>
+      <div class="liens">
+        <a href="https://github.com/tony2marseille-droid/Neo-v2/blob/main/docs/DEPLOIEMENT.md">Guide d'installation <span>docs/DEPLOIEMENT.md</span></a>
+        <a href="https://github.com/tony2marseille-droid/Neo-v2/blob/main/docs/TECHNIQUE.md">Architecture détaillée <span>docs/TECHNIQUE.md</span></a>
+        <a href="https://github.com/tony2marseille-droid/Neo-v2/blob/main/docs/DEPENDANCES.md">Licences des modèles <span>docs/DEPENDANCES.md</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bande final">
+  <div class="cadre">
+    <span class="etiquette">Open source · MIT</span>
+    <h2 style="margin-top:18px">Ton IA t'appartient. Pour de vrai.</h2>
+    <p class="chapeau" style="margin-top:18px">Mets une étoile pour suivre le projet, essaie-le sur ta machine, propose une amélioration. Chaque retour fait avancer Néo.</p>
+    <div class="actions">
+      <a class="bouton plein" href="https://github.com/tony2marseille-droid/Neo-v2">★ Mettre une étoile sur GitHub</a>
+      <a class="bouton creux" href="https://github.com/tony2marseille-droid/Neo-v2/issues">Signaler un problème ou une idée</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="cadre">
+    <span>Néo V2 · code sous licence MIT · les modèles gardent leurs propres licences</span>
+    <span>Mesures prises sur la machine de référence (RTX 5080 16 Go, Windows 11)</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+  // Pluie de caractères : la signature de l'interface de Néo.
+  var c=document.getElementById('pluie'); if(!c||!c.getContext) return;
+  var ctx=c.getContext('2d'), chars='ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ0123456789NEO', taille=16, cols=[], dpr=Math.min(window.devicePixelRatio||1,2);
+  var calme=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function dimensionner(){
+    var r=c.getBoundingClientRect(); c.width=r.width*dpr; c.height=r.height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    var n=Math.ceil(r.width/taille); cols=[]; for(var i=0;i<n;i++) cols.push(Math.random()*r.height/taille);
+    ctx.fillStyle='#030805'; ctx.fillRect(0,0,r.width,r.height);
+    if(calme){ for(var k=0;k<40;k++) dessiner(1); }
+  }
+  function dessiner(fort){
+    var r=c.getBoundingClientRect();
+    ctx.fillStyle='rgba(3,8,5,'+(fort?0.02:0.08)+')'; ctx.fillRect(0,0,r.width,r.height);
+    ctx.font='600 '+(taille-2)+'px "JetBrains Mono", monospace';
+    for(var i=0;i<cols.length;i++){
+      var y=cols[i]*taille; ctx.fillStyle=Math.random()>.975?'#d8ffe4':'#00ff41';
+      ctx.fillText(chars[(Math.random()*chars.length)|0], i*taille, y);
+      if(y>r.height && Math.random()>.975) cols[i]=0; cols[i]+=1;
+    }
+  }
+  dimensionner(); window.addEventListener('resize',dimensionner);
+  if(!calme){ var t=0; (function boucle(ts){ if(ts-t>55){ dessiner(); t=ts; } requestAnimationFrame(boucle); })(0); }
+})();
+(function(){
+  // Visionneuse 3D : STL produits par Néo, affichés avec three.js.
+  var canvas=document.getElementById('scene3d'), repli=document.getElementById('repli3d');
+  var onglets=document.querySelectorAll('.onglets3d button');
+  var courant='dragon', etat=null;
+  function montrerRepli(){ if(canvas) canvas.hidden=true; if(repli){ repli.src='medias/'+courant+'_rendu.jpg'; repli.hidden=false; } }
+  function choisir(nom){
+    courant=nom;
+    onglets.forEach(function(b){ b.setAttribute('aria-selected', String(b.dataset.modele===nom)); });
+    document.querySelectorAll('.fiche[data-fiche]').forEach(function(f){ f.hidden=f.dataset.fiche!==nom; });
+    if(etat) charger(nom); else montrerRepli();
+  }
+  onglets.forEach(function(b){ b.addEventListener('click', function(){ choisir(b.dataset.modele); }); });
+  if(!canvas||!window.THREE||!THREE.STLLoader||!THREE.OrbitControls){ montrerRepli(); return; }
+  var rendu;
+  try{ rendu=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true}); }catch(e){ montrerRepli(); return; }
+  rendu.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  var scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(35,4/3,0.1,100);
+  camera.position.set(0,0.4,3.2);
+  scene.add(new THREE.HemisphereLight(0xdcf5e2,0x030805,0.55));
+  var cle=new THREE.DirectionalLight(0xffffff,0.75); cle.position.set(2,3,2); scene.add(cle);
+  var contre=new THREE.DirectionalLight(0x7dffa8,1.1); contre.position.set(-2,1,-3); scene.add(contre);
+  var controles=new THREE.OrbitControls(camera,canvas);
+  controles.enableDamping=true; controles.enablePan=false; controles.minDistance=1.6; controles.maxDistance=6;
+  controles.autoRotate=!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); controles.autoRotateSpeed=1.2;
+  var matiere=new THREE.MeshStandardMaterial({color:0x9fe0b4,metalness:0.12,roughness:0.5});
+  var objet=null, chargeur=new THREE.STLLoader(), cache={};
+  function placer(geo){
+    if(objet){ scene.remove(objet); }
+    geo.computeVertexNormals(); geo.center(); geo.computeBoundingSphere();
+    objet=new THREE.Mesh(geo,matiere);
+    objet.rotation.x=-Math.PI/2;
+    var s=0.92/geo.boundingSphere.radius; objet.scale.set(s,s,s);
+    scene.add(objet); controles.reset();
+  }
+  function charger(nom){
+    if(cache[nom]){ placer(cache[nom]); return; }
+    chargeur.load('medias/'+nom+'.stl', function(geo){ cache[nom]=geo; if(courant===nom) placer(geo); }, undefined, montrerRepli);
+  }
+  function taille(){
+    var r=canvas.getBoundingClientRect(); if(!r.width) return;
+    rendu.setSize(r.width,r.height,false); camera.aspect=r.width/r.height; camera.updateProjectionMatrix();
+  }
+  etat=true; taille(); window.addEventListener('resize',taille); charger(courant);
+  (function boucle(){ controles.update(); rendu.render(scene,camera); requestAnimationFrame(boucle); })();
+})();
+(function(){
+  var b=document.getElementById('comparer'), r=document.getElementById('curseur');
+  if(!b||!r) return;
+  function maj(){ b.style.setProperty('--pos', r.value+'%'); }
+  r.addEventListener('input',maj); maj();
+})();
+</script>
+</body>
+</html>

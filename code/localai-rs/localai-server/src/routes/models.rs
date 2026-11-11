@@ -1,0 +1,683 @@
+use std::collections::HashSet;
+use std::convert::Infallible;
+use std::sync::Arc;
+
+use axum::{
+    extract::{Path, State},
+    response::sse::{Event, KeepAlive, Sse},
+    routing::{delete, get, post},
+    Json, Router,
+};
+use futures_util::{Stream, StreamExt};
+use serde::Deserialize;
+use serde_json::{json, Value};
+use tokio::sync::mpsc;
+
+use crate::error::{ApiError, ApiResult};
+use crate::AppState;
+
+pub fn router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/api/models", get(list_models))
+        .route("/api/models/installed", get(list_installed))
+        .route("/api/models/install", post(install))
+        .route("/api/models/update", post(update))
+        .route("/api/models/:tag", delete(delete_model))
+        .route("/api/models/load", post(load))
+        .route("/api/models/unload", post(unload))
+        .route("/api/models/discover", post(decouvrir))
+}
+
+fn same_model_tag(a: &str, b: &str) -> bool {
+    let a = a.strip_suffix(":latest").unwrap_or(a);
+    let b = b.strip_suffix(":latest").unwrap_or(b);
+    a == b
+}
+
+/// Allocation observée via Ollama : mémoire totale, VRAM et part estimée CPU/GPU.
+/// Le pourcentage porte sur l'allocation mémoire, pas sur le nombre de couches.
+fn runtime_for_model(ps: &Value, tag: &str) -> Value {
+    let loaded = ps
+        .get("models")
+        .and_then(Value::as_array)
+        .and_then(|models| {
+            models.iter().find(|model| {
+                model
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .or_else(|| model.get("model").and_then(Value::as_str))
+                    .is_some_and(|name| same_model_tag(name, tag))
+            })
+        });
+    let Some(model) = loaded else {
+        return Value::Null;
+    };
+
+    let total_bytes = model.get("size").and_then(Value::as_u64).unwrap_or(0);
+    let vram_bytes = model
+        .get("size_vram")
+        .and_then(Value::as_u64)
+        .unwrap_or(0);
+    let cpu_bytes_estimated = total_bytes.saturating_sub(vram_bytes);
+    let gpu_memory_share_pct = if total_bytes == 0 {
+        Value::Null
+    } else {
+        json!((vram_bytes as f64 / total_bytes as f64 * 100.0).round() as u8)
+    };
+
+    json!({
+        "total_bytes": total_bytes,
+        "vram_bytes": vram_bytes,
+        "cpu_bytes_estimated": cpu_bytes_estimated,
+        "gpu_memory_share_pct": gpu_memory_share_pct,
+        "context_length": model.get("context_length"),
+        "runner": model.get("runner"),
+    })
+}
+
+/// Tier d'un modele d'apres son nombre de parametres :
+/// T1 < 5B, T2 5-9B, T3 10-19B, T4 20-39B, T5 >= 40B.
+/// Calcule cote serveur pour que toutes les interfaces filtrent sur la meme
+/// echelle, meme quand Ollama ne connait pas encore le modele (non installe).
+fn tier_depuis_libelle(libelle: &str, capacites: &Value) -> &'static str {
+    if capacites
+        .as_array()
+        .is_some_and(|c| c.iter().any(|x| x.as_str() == Some("embeddings")))
+    {
+        return "Embed";
+    }
+    let l = libelle.trim().to_ascii_uppercase();
+    let (nombre, en_millions) = match l.strip_suffix('B') {
+        Some(n) => (n.trim().parse::<f64>().unwrap_or(0.0), false),
+        None => match l.strip_suffix('M') {
+            Some(n) => (n.trim().parse::<f64>().unwrap_or(0.0), true),
+            None => (0.0, false),
+        },
+    };
+    let milliards = if en_millions { nombre / 1000.0 } else { nombre };
+    if milliards >= 40.0 {
+        "T5"
+    } else if milliards >= 20.0 {
+        "T4"
+    } else if milliards >= 10.0 {
+        "T3"
+    } else if milliards >= 5.0 {
+        "T2"
+    } else {
+        "T1"
+    }
+}
+
+/// Taille des parametres : celle rapportee par Ollama quand le modele est
+/// installe (elle se trouve dans `details.parameter_size`), sinon repli sur le
+/// libelle du catalogue. Sans ce repli, les entrees du catalogue non installees
+/// arrivaient avec une taille vide et etaient toutes classees T1.
+fn taille_parametres(entree: &Value, installe: Option<&Value>) -> String {
+    let d_ollama = installe
+        .and_then(|m| m.get("details"))
+        .and_then(|d| d.get("parameter_size"))
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    if !d_ollama.trim().is_empty() {
+        return d_ollama.to_string();
+    }
+    entree
+        .get("size_label")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string()
+}
+
+/// Fit materiel : le catalogue le fournit quand il est calibre, sinon la
+/// valeur reste vide et l'interface n'affiche pas de pastille.
+fn fit_catalogue(entree: &Value) -> Value {
+    entree.get("fit").cloned().unwrap_or(json!(""))
+}
+
+async fn list_models(State(st): State<Arc<AppState>>) -> ApiResult<Json<Value>> {
+    // Catalogue (pont Python) + installes/charge (Ollama), fusion comme le Python.
+    let cat: Value = crate::pybridge::py_json(&st.settings.root_dir,
+        "import asyncio, json; from backend.core.catalog import build_catalog; print(json.dumps([e.__dict__ for e in asyncio.run(build_catalog())], default=str))")
+        .await
+        .unwrap_or(json!([]));
+    let tags = st.ollama.tags().await.unwrap_or(json!({"models": []}));
+    let ps = st.ollama.ps().await.unwrap_or(json!({"models": []}));
+    let installed: Vec<&Value> = tags.get("models").and_then(|m| m.as_array())
+        .map(|a| a.iter().collect()).unwrap_or_default();
+    let loaded: Vec<String> = ps.get("models").and_then(|m| m.as_array())
+        .map(|a| a.iter().filter_map(|x| {
+            x.get("name").and_then(|n| n.as_str())
+                .or_else(|| x.get("model").and_then(|n| n.as_str()))
+                .map(|s| s.to_string())
+        }).collect()).unwrap_or_default();
+    let by_tag: std::collections::HashMap<String, &Value> = installed.iter()
+        .filter_map(|m| m.get("name").and_then(|n| n.as_str()).map(|t| (t.to_string(), *m)))
+        .collect();
+    let mut models: Vec<Value> = Vec::new();
+    let mut seen = HashSet::new();
+    if let Some(entries) = cat.as_array() {
+        for e in entries {
+            let tag = e.get("tag").and_then(|t| t.as_str()).unwrap_or("").to_string();
+            seen.insert(tag.clone());
+            let inst = by_tag.get(&tag);
+            let capacites = e.get("capabilities").cloned().unwrap_or(json!([]));
+            let libelle = e.get("size_label").and_then(Value::as_str).unwrap_or("");
+            // Le catalogue peut fixer le tier explicitement ; sinon on le
+            // deduit de la taille. Le cloud n'appartient a aucun tier de taille.
+            let tier = match e.get("tier").and_then(Value::as_str) {
+                Some(t) if !t.trim().is_empty() => t.to_string(),
+                _ => tier_depuis_libelle(libelle, &capacites).to_string(),
+            };
+            models.push(json!({
+                "id": e.get("id").or_else(|| e.get("tag")).cloned().unwrap_or(json!(tag)),
+                "name": e.get("name").cloned().unwrap_or(json!(tag)),
+                "tag": tag,
+                "family": e.get("family").cloned().unwrap_or(json!("")),
+                "capabilities": capacites,
+                "size_label": e.get("size_label").cloned().unwrap_or(json!("")),
+                "quantization": e.get("quantization").cloned().unwrap_or(json!("")),
+                "vram_gb": e.get("vram_gb").cloned().unwrap_or(json!(0.0)),
+                "context": e.get("context").cloned().unwrap_or(json!(0)),
+                "description": e.get("description").cloned().unwrap_or(json!("")),
+                "source": e.get("source").cloned().unwrap_or(json!("")),
+                "installed": inst.is_some(),
+                "loaded": loaded.iter().any(|l| same_model_tag(l, &tag)),
+                "runtime": runtime_for_model(&ps, &tag),
+                "size_bytes": inst.and_then(|m| m.get("size").cloned()).unwrap_or(json!(0)),
+                "parameter_size": taille_parametres(e, inst.copied()),
+                "tier": tier,
+                "params_b": e.get("params_b").cloned().unwrap_or(json!(0.0)),
+                "size_gb": e.get("size_gb").cloned().unwrap_or(json!(0.0)),
+                "fit": fit_catalogue(e),
+                "hors_config": e.get("hors_config").cloned().unwrap_or(json!(false)),
+            }));
+        }
+    }
+    for m in installed {
+            let tag = m.get("name").and_then(|n| n.as_str()).unwrap_or("").to_string();
+            if seen.contains(&tag) {
+                continue;
+        }
+        let base = tag.split(':').next().unwrap_or("").to_string();
+        if base.starts_with("oracle-prog") || base.starts_with("oracle-v") {
+            continue;
+        }
+        let libelle_installe = m.get("details").and_then(|d| d.get("parameter_size"))
+            .and_then(Value::as_str).unwrap_or("").to_string();
+        let capacites_installe = json!([]);
+        let taille_installe = m.get("size").and_then(Value::as_u64).unwrap_or(0) as f64 / 1e9;
+        models.push(json!({
+            "id": tag, "name": tag.split(':').next().unwrap_or(&tag),
+            "tag": tag,
+            "family": m.get("details").and_then(|d| d.get("family")).cloned().unwrap_or(json!("")),
+            "capabilities": capacites_installe,
+            "size_label": m.get("details").and_then(|d| d.get("parameter_size")).cloned().unwrap_or(json!("")),
+            "quantization": m.get("details").and_then(|d| d.get("quantization_level")).cloned().unwrap_or(json!("")),
+            "vram_gb": 0.0, "context": 0, "description": "", "source": "installed",
+            "installed": true,
+            "loaded": loaded.iter().any(|l| same_model_tag(l, &tag)),
+            "runtime": runtime_for_model(&ps, &tag),
+            "size_bytes": m.get("size").cloned().unwrap_or(json!(0)),
+            "parameter_size": m.get("details").and_then(|d| d.get("parameter_size")).cloned().unwrap_or(json!("")),
+            "tier": tier_depuis_libelle(&libelle_installe, &capacites_installe),
+            "params_b": 0.0,
+            "size_gb": (taille_installe * 10.0).round() / 10.0,
+            "fit": "",
+            "hors_config": false,
+        }));
+    }
+    // Modeles cloud : ajoutes si le fournisseur a une cle configuree.
+    for f in localai_core::providers::FOURNISSEURS {
+        let cle = st.db.get_setting(&format!("provider_{}_key", f.id), "");
+        if cle.is_empty() {
+            continue;
+        }
+        let modele = st.db.get_setting(&format!("provider_{}_model", f.id), f.modele_defaut);
+        let tag = format!("cloud:{}:{}", f.id, modele);
+        if seen.contains(&tag) {
+            continue;
+        }
+        models.push(json!({
+            "id": tag,
+            "name": format!("☁ {}", f.nom),
+            "tag": tag,
+            "family": "cloud",
+            "capabilities": ["chat"],
+            "size_label": "cloud",
+            "quantization": "—",
+            "vram_gb": 0.0,
+            "context": 0,
+            "description": format!("Modele cloud via {} (cle API configuree)", f.nom),
+            "source": "cloud",
+            "installed": true,
+            "loaded": false,
+            "runtime": Value::Null,
+            "size_bytes": json!(0),
+            "parameter_size": json!(""),
+            "tier": "Cloud",
+            "params_b": 0.0,
+            "size_gb": 0.0,
+            "fit": "",
+            "hors_config": false,
+        }));
+    }
+    models.sort_by(|a, b| {
+        let ai = a.get("installed").and_then(|v| v.as_bool()).unwrap_or(false);
+        let bi = b.get("installed").and_then(|v| v.as_bool()).unwrap_or(false);
+        bi.cmp(&ai).then(
+            a.get("name").and_then(|n| n.as_str()).unwrap_or("")
+                .cmp(b.get("name").and_then(|n| n.as_str()).unwrap_or("")),
+        )
+    });
+    Ok(Json(json!({ "models": models })))
+}
+
+async fn list_installed(State(st): State<Arc<AppState>>) -> ApiResult<Json<Value>> {
+    let v: Value = crate::pybridge::py_json_chaud(&st.settings.root_dir,
+        "import asyncio, json; from backend.inference import get_active_backend; print(json.dumps([vars(m) for m in asyncio.run(get_active_backend().list_installed())], default=str))")
+        .await
+        .unwrap_or(json!([]));
+    let arr = v.as_array().cloned().unwrap_or_default();
+    Ok(Json(json!({ "models": arr })))
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct TagBody {
+    pub tag: String,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct TagsBody {
+    pub tags: Option<Vec<String>>,
+}
+
+fn sse_data(v: Value) -> String {
+    format!("data: {}\n\n", v)
+}
+
+async fn pull_to_sse(base: &str, tag: &str, tx: mpsc::UnboundedSender<String>) -> bool {
+    let client = reqwest::Client::new();
+    let resp = match client
+        .post(format!("{base}/api/pull"))
+        .json(&json!({ "name": tag, "stream": true }))
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            let _ = tx.send(sse_data(json!({
+                "type": "error", "tag": tag, "error": e.to_string()
+            })));
+            return false;
+        }
+    };
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let detail = resp.text().await.unwrap_or_default();
+        let detail: String = detail.chars().take(300).collect();
+        let _ = tx.send(sse_data(json!({
+            "type": "error", "tag": tag,
+            "error": format!("Ollama HTTP {status}: {detail}")
+        })));
+        return false;
+    }
+    let mut stream = resp.bytes_stream();
+    let mut buf: Vec<u8> = Vec::new();
+    while let Some(chunk) = stream.next().await {
+        let bytes = match chunk {
+            Ok(b) => b,
+            Err(e) => {
+                let _ = tx.send(sse_data(json!({
+                    "type": "error", "tag": tag, "error": e.to_string()
+                })));
+                return false;
+            }
+        };
+        buf.extend_from_slice(&bytes);
+        while let Some(pos) = buf.iter().position(|&b| b == b'\n') {
+            let line: Vec<u8> = buf.drain(..=pos).collect();
+            let s = String::from_utf8_lossy(&line);
+            let s = s.trim();
+            if s.is_empty() {
+                continue;
+            }
+            if let Ok(v) = serde_json::from_str::<Value>(s) {
+                let done = v.get("status").and_then(|x| x.as_str()) == Some("success");
+                let _ = tx.send(sse_data(json!({
+                    "type": if done { "done" } else { "progress" },
+                    "tag": tag,
+                    "status": v.get("status"),
+                    "completed": v.get("completed"),
+                    "total": v.get("total"),
+                })));
+                if done {
+                    return true;
+                }
+            }
+        }
+    }
+    let _ = tx.send(sse_data(json!({
+        "type": "error", "tag": tag,
+        "error": "Flux Ollama terminé sans confirmation de succès"
+    })));
+    false
+}
+
+async fn install(
+    State(st): State<Arc<AppState>>,
+    Json(b): Json<TagBody>,
+) -> ApiResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
+    let (tx, rx) = mpsc::unbounded_channel::<String>();
+    let base = st.ollama.base().to_string();
+    let tag = b.tag.clone();
+    tokio::spawn(async move { pull_to_sse(&base, &tag, tx).await });
+    let raw = tokio_stream::wrappers::UnboundedReceiverStream::new(rx).map(|s| {
+        let payload = s.trim_start_matches("data: ").trim().to_string();
+        Ok::<_, Infallible>(Event::default().data(payload))
+    });
+    Ok(Sse::new(raw).keep_alive(KeepAlive::default()))
+}
+
+async fn update(
+    State(st): State<Arc<AppState>>,
+    Json(b): Json<TagsBody>,
+) -> ApiResult<Sse<impl Stream<Item = Result<Event, Infallible>>>> {
+    let (tx, rx) = mpsc::unbounded_channel::<String>();
+    let base = st.ollama.base().to_string();
+    let tags: Vec<String> = match b.tags {
+        Some(t) => t,
+        None => st
+            .ollama
+            .tags()
+            .await
+            .ok()
+            .and_then(|v| v.get("models").cloned())
+            .and_then(|m| {
+                m.as_array().map(|a| {
+                    a.iter()
+                        .filter_map(|x| x.get("name")?.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
+            })
+            .unwrap_or_default(),
+    };
+    let total = tags.len();
+    tokio::spawn(async move {
+        let mut updated = 0i32;
+        for tag in tags {
+            let _ = tx.send(sse_data(json!({ "type": "model_start", "tag": tag })));
+            let ok = pull_to_sse(&base, &tag, tx.clone()).await;
+            if ok {
+                updated += 1;
+            }
+            let _ = tx.send(sse_data(json!({ "type": "model_done", "tag": tag, "ok": ok })));
+        }
+        let _ = tx.send(sse_data(json!({
+            "type": "done",
+            "updated": updated,
+            "failed": total.saturating_sub(updated as usize)
+        })));
+    });
+    let raw = tokio_stream::wrappers::UnboundedReceiverStream::new(rx).map(|s| {
+        let payload = s.trim_start_matches("data: ").trim().to_string();
+        Ok::<_, Infallible>(Event::default().data(payload))
+    });
+    Ok(Sse::new(raw).keep_alive(KeepAlive::default()))
+}
+
+async fn delete_model(
+    State(st): State<Arc<AppState>>,
+    Path(tag): Path<String>,
+) -> ApiResult<Json<Value>> {
+    let client = reqwest::Client::new();
+    let r = client
+        .request(reqwest::Method::DELETE, format!("{}/api/delete", st.ollama.base()))
+        .json(&json!({ "name": tag }))
+        .send()
+        .await
+        .map_err(localai_core::AppError::from)?;
+    if !r.status().is_success() {
+        // Un modele absent n'est pas une panne serveur : on renvoie 404.
+        if r.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err(ApiError(localai_core::AppError::NotFound(format!(
+                "modele introuvable : {tag}"
+            ))));
+        }
+        return Err(ApiError(localai_core::AppError::Ollama(format!(
+            "delete {tag}: {}",
+            r.status()
+        ))));
+    }
+    Ok(Json(json!({ "deleted": tag })))
+}
+
+async fn load(
+    State(st): State<Arc<AppState>>,
+    Json(b): Json<TagBody>,
+) -> ApiResult<Json<Value>> {
+    // Prompt vide : Ollama charge le modele SANS generer (" " lancait une
+    // generation complete pour rien).
+    let r = st
+        .http
+        .post(format!("{}/api/generate", st.ollama.base()))
+        .json(&json!({
+            "model": b.tag,
+            "prompt": "",
+            "stream": false,
+            "options": { "num_ctx": localai_core::ollama::contexte_pour(&b.tag, localai_core::ollama::DEFAULT_NUM_CTX) }
+        }))
+        .send()
+        .await
+        .map_err(localai_core::AppError::from)?;
+    if !r.status().is_success() {
+        // Modele non installe : 404 explicite plutot qu'une erreur 500.
+        if r.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err(ApiError(localai_core::AppError::NotFound(format!(
+                "modele introuvable : {}",
+                b.tag
+            ))));
+        }
+        return Err(ApiError(localai_core::AppError::Ollama(format!(
+            "load {}: {}",
+            b.tag,
+            r.status()
+        ))));
+    }
+    Ok(Json(json!({ "loaded": b.tag })))
+}
+
+async fn unload(
+    State(st): State<Arc<AppState>>,
+    Json(b): Json<TagBody>,
+) -> ApiResult<Json<Value>> {
+    st.ollama.unload(&b.tag).await?;
+    Ok(Json(json!({ "unloaded": b.tag })))
+}
+
+// ============================================================
+// Recherche de nouveaux modeles disponibles (bibliotheque Ollama).
+// ============================================================
+
+/// Extrait les identifiants de modeles d'une page HTML de
+/// https://ollama.com/library (liens href="/library/<slug>").
+fn slugs_depuis_html(html: &str) -> Vec<String> {
+    let bytes = html.as_bytes();
+    let pat = b"href=\"/library/";
+    let mut slugs: Vec<String> = Vec::new();
+    if pat.len() >= bytes.len() {
+        return slugs;
+    }
+    let mut i = 0usize;
+    while i + pat.len() < bytes.len() {
+        if &bytes[i..i + pat.len()] == pat {
+            let mut j = i + pat.len();
+            let mut slug = String::new();
+            while j < bytes.len() {
+                let c = bytes[j];
+                if c == b'"' || c == b'?' || c == b'#' {
+                    break;
+                }
+                if !(c.is_ascii_alphanumeric() || c == b'-' || c == b'.' || c == b'_' || c == b':') {
+                    break;
+                }
+                slug.push(c as char);
+                j += 1;
+            }
+            if !slug.is_empty() && !slugs.contains(&slug) {
+                slugs.push(slug);
+            }
+            i = j;
+        } else {
+            i += 1;
+        }
+    }
+    slugs
+}
+
+/// POST /api/models/discover : recupere la bibliotheque publique Ollama
+/// et retourne les modeles absents du catalogue local et du disque.
+async fn decouvrir(State(st): State<Arc<AppState>>) -> ApiResult<Json<serde_json::Value>> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(25))
+        .build()
+        .map_err(|e| ApiError(localai_core::AppError::Internal(e.to_string())))?;
+    let rep = client
+        .get("https://ollama.com/library")
+        .header("User-Agent", "Mozilla/5.0 (oracle-neo)")
+        .send()
+        .await
+        .map_err(|e| ApiError(localai_core::AppError::Internal(format!("acces ollama.com: {e}"))))?;
+    if !rep.status().is_success() {
+        return Err(ApiError(localai_core::AppError::Internal(format!(
+            "ollama.com HTTP {}",
+            rep.status()
+        ))));
+    }
+    let html = rep
+        .text()
+        .await
+        .map_err(|e| ApiError(localai_core::AppError::Internal(e.to_string())))?;
+    let slugs = slugs_depuis_html(&html);
+    let total_slugs = slugs.len();
+
+    // Connus : tags du catalogue local (models.json, sans pybridge) + installes.
+    let mut connus: Vec<String> = Vec::new();
+    if let Ok(texte) = std::fs::read_to_string(st.settings.root_dir.join("config").join("models.json")) {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&texte) {
+            if let Some(arr) = v.get("models").and_then(|m| m.as_array()) {
+                for m in arr {
+                    if let Some(t) = m.get("tag").and_then(|x| x.as_str()) {
+                        connus.push(t.to_lowercase());
+                    }
+                }
+            }
+        }
+    }
+    if let Ok(v) = st.ollama.tags().await {
+        if let Some(arr) = v.get("models").and_then(|m| m.as_array()) {
+            for m in arr {
+                if let Some(n) = m.get("name").and_then(|x| x.as_str()) {
+                    connus.push(n.to_lowercase());
+                }
+            }
+        }
+    }
+    let base_connus: Vec<String> = connus
+        .iter()
+        .map(|t| t.split(':').next().unwrap_or(t).to_string())
+        .collect();
+    let nouveaux: Vec<serde_json::Value> = slugs
+        .into_iter()
+        .filter(|s| {
+            let base = s.split(':').next().unwrap_or(s);
+            !base.is_empty()
+                && !base_connus.iter().any(|k| k == base)
+                && !base.starts_with("library")
+        })
+        .take(80)
+        .map(|s| {
+            serde_json::json!({
+                "name": s.clone(),
+                "tag": format!("{s}:latest"),
+            })
+        })
+        .collect();
+    Ok(Json(serde_json::json!({
+        "nouveaux": nouveaux,
+        "total": total_slugs,
+    })))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{runtime_for_model, taille_parametres, tier_depuis_libelle};
+    use serde_json::json;
+
+    #[test]
+    fn runtime_reports_gpu_cpu_split_and_context() {
+        let ps = json!({
+            "models": [{
+                "name": "oracle-prog-latest:latest",
+                "size": 10_000_000_000u64,
+                "size_vram": 8_400_000_000u64,
+                "context_length": 8192,
+                "runner": "llamacpp"
+            }]
+        });
+        let runtime = runtime_for_model(&ps, "oracle-prog-latest");
+        assert_eq!(runtime["vram_bytes"], json!(8_400_000_000u64));
+        assert_eq!(runtime["cpu_bytes_estimated"], json!(1_600_000_000u64));
+        assert_eq!(runtime["gpu_memory_share_pct"], json!(84));
+        assert_eq!(runtime["context_length"], json!(8192));
+        assert_eq!(runtime["runner"], json!("llamacpp"));
+    }
+
+    #[test]
+    fn runtime_is_null_when_model_is_not_loaded() {
+        let ps = json!({ "models": [] });
+        assert!(runtime_for_model(&ps, "oracle-prog-latest").is_null());
+    }
+
+    #[test]
+    fn tier_suit_le_nombre_de_parametres() {
+        let vide = json!([]);
+        assert_eq!(tier_depuis_libelle("1.5B", &vide), "T1");
+        assert_eq!(tier_depuis_libelle("4B", &vide), "T1");
+        assert_eq!(tier_depuis_libelle("7B", &vide), "T2");
+        assert_eq!(tier_depuis_libelle("8B", &vide), "T2");
+        assert_eq!(tier_depuis_libelle("14B", &vide), "T3");
+        assert_eq!(tier_depuis_libelle("24B", &vide), "T4");
+        assert_eq!(tier_depuis_libelle("30B", &vide), "T4");
+        assert_eq!(tier_depuis_libelle("47B", &vide), "T5");
+        assert_eq!(tier_depuis_libelle("235B", &vide), "T5");
+    }
+
+    #[test]
+    fn tier_embed_prime_sur_la_taille() {
+        // nomic-embed-text fait 137M : sans le cas embeddings il tomberait en T1.
+        let caps = json!(["embeddings"]);
+        assert_eq!(tier_depuis_libelle("137M", &caps), "Embed");
+    }
+
+    #[test]
+    fn tier_libelle_absent_ou_bizarre_retombe_en_t1() {
+        let vide = json!([]);
+        assert_eq!(tier_depuis_libelle("", &vide), "T1");
+        assert_eq!(tier_depuis_libelle("cloud", &vide), "T1");
+    }
+
+    #[test]
+    fn taille_parametres_prefere_ollama_puis_replie_sur_le_catalogue() {
+        // Ollama range la taille dans details.parameter_size.
+        let entree = json!({ "size_label": "8B" });
+        let installe = json!({ "details": { "parameter_size": "8.0B" } });
+        assert_eq!(taille_parametres(&entree, Some(&installe)), "8.0B");
+
+        // Modele non installe : repli sur le libelle du catalogue.
+        assert_eq!(taille_parametres(&entree, None), "8B");
+
+        // Installe mais details incomplets : repli aussi.
+        let incomplet = json!({ "details": {} });
+        assert_eq!(taille_parametres(&entree, Some(&incomplet)), "8B");
+    }
+}

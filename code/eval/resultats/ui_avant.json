@@ -1,0 +1,59 @@
+{
+ "score_couverture_theme": 66.2,
+ "couleurs_en_dur": 216,
+ "references_variables": 423,
+ "fichiers": {
+  "components/Avatar3D.tsx": {
+   "en_dur": 4,
+   "variables": 0
+  },
+  "components/ChatView.tsx": {
+   "en_dur": 2,
+   "variables": 0
+  },
+  "components/DocumentsView.tsx": {
+   "en_dur": 0,
+   "variables": 8
+  },
+  "components/FineTuneView.tsx": {
+   "en_dur": 4,
+   "variables": 53
+  },
+  "components/HomeView.tsx": {
+   "en_dur": 3,
+   "variables": 7
+  },
+  "components/MatrixRain.tsx": {
+   "en_dur": 5,
+   "variables": 0
+  },
+  "components/ModelsView.tsx": {
+   "en_dur": 1,
+   "variables": 9
+  },
+  "components/OnboardingWizard.tsx": {
+   "en_dur": 1,
+   "variables": 8
+  },
+  "components/SettingsView.tsx": {
+   "en_dur": 6,
+   "variables": 26
+  },
+  "components/useImageAttach.ts": {
+   "en_dur": 1,
+   "variables": 0
+  },
+  "components/VideoView.tsx": {
+   "en_dur": 0,
+   "variables": 23
+  },
+  "index.css": {
+   "en_dur": 166,
+   "variables": 238
+  },
+  "shell.css": {
+   "en_dur": 23,
+   "variables": 51
+  }
+ }
+}

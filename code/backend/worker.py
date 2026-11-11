@@ -1,0 +1,91 @@
+# -*- coding: utf-8 -*-
+"""Worker Python residant : un seul process chaud execute les operations
+frequentes du pont (outils, agents, routage, code). Les modules restent
+importes une seule fois : plus de cout de demarrage Python (1-4 s) par appel.
+
+Protocole : une ligne JSON par requete sur stdin, une ligne JSON par
+reponse sur stdout. Les print() des outils sont captures et ne polluent
+jamais le protocole. Le serveur Rust relance le worker s'il tombe.
+"""
+import contextlib
+import io
+import json
+import sys
+
+_REAL_OUT = sys.stdout
+
+try:
+    # Le serveur est lance par une tache planifiee (priorite basse, disque et
+    # memoire compris) : le worker et les outils qu'il lance reviennent a la normale.
+    from backend.core import priorite as _priorite
+
+    _priorite.normale()
+except Exception:
+    pass
+
+
+def _out(resp: dict) -> None:
+    _REAL_OUT.write(json.dumps(resp, default=str) + "\n")
+    _REAL_OUT.flush()
+
+
+def _handle(req: dict):
+    """Execute une requete du pont. Operations :
+
+    - ``tool``  : {name, args, level} -> texte rendu par l'outil ;
+    - ``code``  : {code} -> sortie standard capturee du code execute (c'est
+      par la que le serveur lit les agents et le routage : `tools.rs`).
+    """
+    op = req.get("op", "")
+    if op == "tool":
+        from backend.tools.executor import PermissionManager, execute_tool
+
+        return execute_tool(
+            str(req.get("name", "")),
+            req.get("args") or {},
+            PermissionManager(str(req.get("level", "USER"))),
+        )
+    if op == "code":
+        ns = {"__name__": "__main__"}
+        exec(compile(str(req.get("code", "")), "<worker>", "exec"), ns)
+        return ""
+    raise ValueError(f"operation inconnue: {op}")
+
+
+def main() -> None:
+    # Prechauffage : les imports du pont sont faits une seule fois, au
+    # demarrage du serveur (le premier appel utilisateur est deja chaud).
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        try:
+            import backend.tools.executor  # noqa: F401
+            from backend.core.agents import get_agent  # noqa: F401
+            from backend.core.router import route_agent  # noqa: F401
+        except Exception:
+            pass
+    for ligne in sys.stdin:
+        ligne = ligne.strip()
+        if not ligne:
+            continue
+        try:
+            req = json.loads(ligne)
+        except Exception:
+            continue
+        rid = req.get("id")
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+                resultat = _handle(req)
+            if req.get("op") == "code":
+                resultat = buf.getvalue()
+            _out({"id": rid, "ok": True, "out": resultat})
+        except Exception as exc:
+            _out({"id": rid, "ok": False, "err": f"{exc}"})
+
+
+if __name__ == "__main__":
+    try:
+        sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    main()

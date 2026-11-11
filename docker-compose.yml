@@ -1,0 +1,52 @@
+# Néo — serveur + Ollama
+#
+#   docker compose up -d
+#   docker compose exec ollama ollama pull gemma3:4b
+#   docker compose exec ollama ollama pull nomic-embed-text
+#
+# Puis http://localhost:8320
+#
+# GPU NVIDIA : decommenter la section `deploy` du service ollama (necessite
+# nvidia-container-toolkit). Sans GPU, Ollama tourne en CPU : fonctionnel
+# mais lent.
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: neo-ollama
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  neo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neo-server
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    ports:
+      - "8320:8320"
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      LOCALAI_ROOT: /app
+      LOCALAI_DATA: /app/data
+      RUST_LOG: info
+    volumes:
+      - neo-data:/app/data
+      - neo-workspace:/app/workspace
+
+volumes:
+  ollama-models:
+  neo-data:
+  neo-workspace:

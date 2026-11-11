@@ -1,0 +1,95 @@
+{
+  "_doc": "EXEMPLE a copier en services.json (non versionne) et a adapter a la machine. Services permanents de Neo, lances et surveilles par localai-watch (superviseur unique). Relu a chaud a chaque modification. Champs : nom, libelle, commande, args, dossier, env, port, sante (URL qui doit repondre 2xx), journal (fichier sous logs/), delai_demarrage_s (temps accorde au demarrage), echecs_avant_arret (controles KO consecutifs, port ouvert, avant de tuer un service bloque), delai_initial_s (attente apres le demarrage du superviseur avant un premier lancement), actif.",
+  "services": [
+    {
+      "nom": "ollama",
+      "libelle": "Ollama (LLM)",
+      "commande": "ollama",
+      "args": [
+        "serve"
+      ],
+      "env": {
+        "OLLAMA_MODELS": "E:\\LocalAI-Modeles"
+      },
+      "port": 11434,
+      "sante": "http://127.0.0.1:11434/api/version",
+      "journal": "ollama_superviseur.log",
+      "delai_demarrage_s": 90,
+      "delai_initial_s": 60
+    },
+    {
+      "nom": "toolshim",
+      "libelle": "Proxy d'outils (toolshim)",
+      "commande": "E:\\ia\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "toolshim",
+        "--config",
+        "config.json"
+      ],
+      "dossier": "E:\\ia\\tools\\toolshim",
+      "port": 8330,
+      "sante": "http://127.0.0.1:8330/health",
+      "journal": "toolshim.log"
+    },
+    {
+      "nom": "rerank",
+      "libelle": "Reranking (RAG)",
+      "commande": "E:\\ia\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-u",
+        "E:\\ia\\rerank_server.py"
+      ],
+      "dossier": "E:\\ia",
+      "port": 8322,
+      "sante": "http://127.0.0.1:8322/",
+      "journal": "rerank.log",
+      "delai_demarrage_s": 180
+    },
+    {
+      "nom": "video",
+      "libelle": "API video",
+      "commande": "E:\\ia\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-u",
+        "E:\\ia\\serve_video.py"
+      ],
+      "dossier": "E:\\ia",
+      "port": 8321,
+      "sante": "http://127.0.0.1:8321/api/video/liste",
+      "journal": "serve_video.log"
+    },
+    {
+      "nom": "serveur",
+      "libelle": "Serveur Neo",
+      "commande": "E:\\localai-rs\\target\\release\\localai-server.exe",
+      "dossier": "E:\\localai-rs",
+      "env": {
+        "LOCALAI_PORT": "8320",
+        "LOCALAI_ROOT": "E:\\ia",
+        "OLLAMA_URL": "http://127.0.0.1:8330"
+      },
+      "port": 8320,
+      "sante": "http://127.0.0.1:8320/api/health",
+      "journal": "server_rs.log"
+    },
+    {
+      "nom": "comfyui",
+      "libelle": "ComfyUI",
+      "commande": "E:\\ComfyUI\\.venv\\Scripts\\python.exe",
+      "args": [
+        "E:\\ComfyUI\\main.py",
+        "--port",
+        "8188",
+        "--listen",
+        "127.0.0.1"
+      ],
+      "dossier": "E:\\ComfyUI",
+      "port": 8188,
+      "sante": "http://127.0.0.1:8188/",
+      "journal": "comfyui.log",
+      "delai_demarrage_s": 180,
+      "actif": false
+    }
+  ]
+}

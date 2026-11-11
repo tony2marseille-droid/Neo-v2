@@ -1,0 +1,393 @@
+﻿//! Client Ollama minimal (chat non-stream + stream + tags + ps + generate).
+use serde::{Deserialize, Serialize};
+
+use crate::error::{AppError, AppResult};
+
+/// Budget de contexte par défaut pour la RTX 3080 10 Go.
+pub const DEFAULT_NUM_CTX: usize = 8192;
+
+/// Contexte unique pour les modeles qui servent a tout (conversation, vision,
+/// reformulation) : Ollama RECHARGE le modele (5,3 s pour gemma4:12b) des que
+/// `num_ctx` change d'une requete a l'autre. Gemma 4 (attention a fenetre
+/// glissante) ne coute que 200 Mo de 8 192 a 16 384 jetons (mesure du
+/// 09/11/2026) : une seule taille, plus aucun rechargement.
+pub const CTX_GEMMA4: usize = 16384;
+
+/// Taille de contexte a demander pour `modele` ; `souhaite` pour les autres.
+pub fn contexte_pour(modele: &str, souhaite: usize) -> usize {
+    if modele.to_lowercase().starts_with("gemma4") {
+        CTX_GEMMA4
+    } else {
+        souhaite
+    }
+}
+
+#[derive(Clone)]
+pub struct Ollama {
+    base: String,
+    client: reqwest::Client,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Msg {
+    pub role: String,
+    pub content: String,
+}
+
+impl Ollama {
+    pub fn new(base: impl Into<String>) -> AppResult<Self> {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(900))
+            // Pas de pooling : Ollama redemarre regulierement et les sockets
+            // gardees deviennent mortes (requetes pendantes jusqu'au timeout).
+            // En localhost le cout d'une connexion fraiche est < 1 ms.
+            .pool_max_idle_per_host(0)
+            .build()?;
+        Ok(Self {
+            base: base.into().trim_end_matches('/').to_string(),
+            client,
+        })
+    }
+
+    pub fn base(&self) -> &str {
+        &self.base
+    }
+
+    pub async fn version(&self) -> AppResult<String> {
+        let r = self
+            .client
+            .get(format!("{}/api/version", self.base))
+            .send()
+            .await?;
+        Ok(r.text().await.unwrap_or_default())
+    }
+
+    pub async fn tags(&self) -> AppResult<serde_json::Value> {
+        let r = self
+            .client
+            .get(format!("{}/api/tags", self.base))
+            .send()
+            .await?;
+        r.json().await.map_err(AppError::from)
+    }
+
+    pub async fn ps(&self) -> AppResult<serde_json::Value> {
+        let r = self
+            .client
+            .get(format!("{}/api/ps", self.base))
+            .send()
+            .await?;
+        r.json().await.map_err(AppError::from)
+    }
+
+    pub async fn chat(
+        &self,
+        model: &str,
+        messages: Vec<Msg>,
+        temperature: f32,
+        num_predict: i32,
+    ) -> AppResult<String> {
+        // Via le transport stream (le path non-stream d'Ollama 0.40.3 a
+        // montre des blocages intermittents ; le stream est fiable).
+        let body = serde_json::json!({
+            "messages": messages,
+            "think": false,
+            "keep_alive": "60m",
+            "options": {
+                "temperature": temperature,
+                "num_predict": num_predict,
+                "num_ctx": contexte_pour(model, DEFAULT_NUM_CTX),
+            },
+        });
+        self.chat_stream(model, body, |_| {}).await
+    }
+
+    /// Appel non-stream AVEC outils : retourne (texte, tool_calls).
+    /// Chaque tool_call = (nom, arguments_json).
+    pub async fn chat_tools(
+        &self,
+        model: &str,
+        messages: serde_json::Value,
+        tools: &[serde_json::Value],
+        temperature: f32,
+        num_predict: i32,
+    ) -> AppResult<(String, Vec<(String, serde_json::Value)>)> {
+        let body = serde_json::json!({
+            "model": model,
+            "messages": messages,
+            "stream": false,
+            "think": false,
+            "keep_alive": "60m",
+            "tools": tools,
+            "options": {
+                "temperature": temperature,
+                "num_predict": num_predict,
+                "num_ctx": contexte_pour(model, DEFAULT_NUM_CTX),
+            },
+        });
+        let r = self
+            .client
+            .post(format!("{}/api/chat", self.base))
+            .json(&body)
+            .send()
+            .await?;
+        if !r.status().is_success() {
+            return Err(erreur_http("chat_tools", r).await);
+        }
+        let v: serde_json::Value = r.json().await?;
+        let text = v
+            .get("message")
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.as_str())
+            .unwrap_or("")
+            .to_string();
+        let mut calls = Vec::new();
+        if let Some(arr) = v.get("message").and_then(|m| m.get("tool_calls")).and_then(|t| t.as_array()) {
+            for tc in arr {
+                let name = tc
+                    .get("function")
+                    .and_then(|f| f.get("name"))
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                if name.is_empty() {
+                    continue;
+                }
+                let args = tc
+                    .get("function")
+                    .and_then(|f| f.get("arguments"))
+                    .cloned()
+                    .unwrap_or(serde_json::json!({}));
+                // Arguments parfois en string JSON.
+                let args = match args {
+                    serde_json::Value::String(s) => {
+                        serde_json::from_str(&s).unwrap_or(serde_json::json!({}))
+                    }
+                    other => other,
+                };
+                calls.push((name, args));
+            }
+        }
+        Ok((text, calls))
+    }
+
+    /// Chat en streaming : appelle `on_token` pour chaque morceau, retourne le texte complet.
+    pub async fn chat_stream<F>(&self, model: &str, body: serde_json::Value, on_token: F) -> AppResult<String>
+    where
+        F: FnMut(&str),
+    {
+        Ok(self.chat_stream_counted(model, body, on_token).await?.0)
+    }
+
+    /// Chat en streaming AVEC compteurs de tokens : le chunk final Ollama
+    /// (done=true) contient prompt_eval_count (entree) et eval_count
+    /// (sortie). Retourne (texte complet, tokens entree, tokens sortie).
+    ///
+    /// Un statut HTTP d'echec ou une ligne `{"error": ...}` (modele absent,
+    /// memoire insuffisante...) devient une erreur : avant, l'appelant
+    /// recevait un texte vide sans aucune explication.
+    pub async fn chat_stream_counted<F>(
+        &self,
+        model: &str,
+        body: serde_json::Value,
+        on_token: F,
+    ) -> AppResult<(String, i64, i64)>
+    where
+        F: FnMut(&str),
+    {
+        self.chat_stream_reflexion(model, body, on_token, |_| {}).await
+    }
+
+    /// Comme `chat_stream_counted`, avec la reflexion (`"think": true`) relayee
+    /// a part par `on_pensee` : elle precede la reponse et n'en fait pas partie.
+    pub async fn chat_stream_reflexion<F, P>(
+        &self,
+        model: &str,
+        body: serde_json::Value,
+        mut on_token: F,
+        mut on_pensee: P,
+    ) -> AppResult<(String, i64, i64)>
+    where
+        F: FnMut(&str),
+        P: FnMut(&str),
+    {
+        use futures_util::StreamExt;
+        let mut req = match body {
+            serde_json::Value::Object(obj) => obj,
+            _ => serde_json::Map::new(),
+        };
+        req.insert("model".into(), serde_json::Value::from(model));
+        req.insert("stream".into(), serde_json::Value::from(true));
+        // Modele resident : evite les rechargements a froid entre messages.
+        req.entry("keep_alive")
+            .or_insert_with(|| serde_json::Value::from("60m"));
+        let resp = self
+            .client
+            .post(format!("{}/api/chat", self.base))
+            .json(&serde_json::Value::Object(req))
+            .send()
+            .await?;
+        if !resp.status().is_success() {
+            return Err(erreur_http("chat", resp).await);
+        }
+        let mut stream = resp.bytes_stream();
+        let mut full = String::new();
+        let mut buf: Vec<u8> = Vec::new();
+        let mut prompt_tokens: i64 = 0;
+        let mut completion_tokens: i64 = 0;
+        while let Some(chunk) = stream.next().await {
+            buf.extend_from_slice(&chunk?);
+            while let Some(pos) = buf.iter().position(|&b| b == b'\n') {
+                let line: Vec<u8> = buf.drain(..=pos).collect();
+                let Ok(v) = serde_json::from_slice::<serde_json::Value>(&line) else { continue };
+                if let Some(e) = v.get("error").and_then(|e| e.as_str()) {
+                    return Err(AppError::Ollama(format!("chat {model}: {e}")));
+                }
+                if v.get("done").and_then(|d| d.as_bool()).unwrap_or(false) {
+                    // Chunk final : compteurs reels de la requete.
+                    prompt_tokens = v.get("prompt_eval_count").and_then(|x| x.as_i64()).unwrap_or(0);
+                    completion_tokens = v.get("eval_count").and_then(|x| x.as_i64()).unwrap_or(0);
+                    continue;
+                }
+                let message = v.get("message");
+                if let Some(p) = message.and_then(|m| m.get("thinking")).and_then(|c| c.as_str()) {
+                    if !p.is_empty() {
+                        on_pensee(p);
+                    }
+                }
+                if let Some(t) = message.and_then(|m| m.get("content")).and_then(|c| c.as_str()) {
+                    full.push_str(t);
+                    on_token(t);
+                }
+            }
+        }
+        Ok((full, prompt_tokens, completion_tokens))
+    }
+
+    /// Precharge un modele (chaud pour la prochaine requete, sans generer).
+    /// Si le modele est deja charge mais 100 % CPU (VRAM occupee au moment du
+    /// chargement), il est decharge puis recharge pour viser le GPU.
+    pub async fn preload(&self, model: &str) -> AppResult<()> {
+        if let Ok(v) = self.ps().await {
+            if let Some(models) = v.get("models").and_then(|m| m.as_array()) {
+                for m in models {
+                    let nom = m.get("name").and_then(|n| n.as_str()).unwrap_or("");
+                    if meme_modele(nom, model) {
+                        let vram = m.get("size_vram").and_then(|x| x.as_i64()).unwrap_or(0);
+                        let taille = m.get("size").and_then(|x| x.as_i64()).unwrap_or(0);
+                        if vram == 0 && taille > 0 {
+                            let _ = self.unload(model).await;
+                            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        let body = serde_json::json!({
+            "model": model,
+            "prompt": "",
+            "stream": false,
+            "keep_alive": "60m",
+            "options": { "num_predict": 1, "num_ctx": contexte_pour(model, DEFAULT_NUM_CTX) },
+        });
+        let _ = self
+            .client
+            .post(format!("{}/api/generate", self.base))
+            .json(&body)
+            .send()
+            .await;
+        Ok(())
+    }
+
+    /// Vrai si le modele (ou son alias sans tag) est charge en memoire.
+    pub async fn loaded_model(&self, model: &str) -> AppResult<bool> {
+        let v = self.ps().await?;
+        let charges = v.get("models").and_then(|m| m.as_array()).cloned().unwrap_or_default();
+        Ok(charges.iter().any(|m| {
+            m.get("name").and_then(|n| n.as_str()).is_some_and(|n| meme_modele(n, model))
+        }))
+    }
+
+    /// Embeddings via /api/embed (nomic-embed-text).
+    pub async fn embed(&self, model: &str, inputs: Vec<String>) -> AppResult<Vec<Vec<f32>>> {
+        let body = serde_json::json!({ "model": model, "input": inputs });
+        let r = self
+            .client
+            .post(format!("{}/api/embed", self.base))
+            .json(&body)
+            .send()
+            .await?;
+        if !r.status().is_success() {
+            return Err(AppError::Ollama(format!("embed: {}", r.status())));
+        }
+        let v: serde_json::Value = r.json().await?;
+        let arr = v
+            .get("embeddings")
+            .and_then(|e| e.as_array())
+            .ok_or_else(|| AppError::Ollama("embed: pas de embeddings".into()))?;
+        let mut out = Vec::with_capacity(arr.len());
+        for emb in arr {
+            let vec: Vec<f32> = emb
+                .as_array()
+                .map(|a| a.iter().filter_map(|x| x.as_f64().map(|f| f as f32)).collect())
+                .unwrap_or_default();
+            out.push(vec);
+        }
+        Ok(out)
+    }
+
+    pub async fn unload(&self, model: &str) -> AppResult<()> {
+        let body = serde_json::json!({"model": model, "keep_alive": 0});
+        self.client
+            .post(format!("{}/api/generate", self.base))
+            .json(&body)
+            .send()
+            .await?;
+        Ok(())
+    }
+}
+
+/// Meme modele Ollama ? `qwen3` == `qwen3:latest`, mais `qwen3` ne designe
+/// plus `qwen3-coder:30b` (l'ancienne comparaison par prefixe le faisait :
+/// faux « deja charge », dechargement du mauvais modele).
+pub fn meme_modele(a: &str, b: &str) -> bool {
+    fn complet(t: &str) -> String {
+        let t = t.trim().to_lowercase();
+        if t.contains(':') { t } else { format!("{t}:latest") }
+    }
+    complet(a) == complet(b)
+}
+
+/// Erreur lisible pour une reponse HTTP en echec : statut + message Ollama
+/// (`{"error": "... does not support tools"}`), utile a l'appelant pour
+/// distinguer un modele sans outils d'une panne.
+async fn erreur_http(contexte: &str, r: reqwest::Response) -> AppError {
+    let statut = r.status();
+    let corps = r.text().await.unwrap_or_default();
+    let detail = serde_json::from_str::<serde_json::Value>(&corps)
+        .ok()
+        .and_then(|v| v.get("error").and_then(|e| e.as_str()).map(str::to_string))
+        .unwrap_or_else(|| corps.chars().take(200).collect());
+    AppError::Ollama(format!("{contexte}: {statut} {detail}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{contexte_pour, meme_modele, CTX_GEMMA4};
+
+    #[test]
+    fn contexte_unique_pour_gemma4() {
+        assert_eq!(contexte_pour("gemma4:12b", 4096), CTX_GEMMA4);
+        assert_eq!(contexte_pour("gemma4:12b", 12288), CTX_GEMMA4);
+        assert_eq!(contexte_pour("localai-prog-v10-q5km:latest", 8192), 8192);
+    }
+
+    #[test]
+    fn comparaison_des_tags() {
+        assert!(meme_modele("qwen3", "qwen3:latest"));
+        assert!(meme_modele("Qwen3:8B", "qwen3:8b"));
+        assert!(!meme_modele("qwen3-coder:30b", "qwen3"));
+        assert!(!meme_modele("qwen3:14b", "qwen3:8b"));
+    }
+}

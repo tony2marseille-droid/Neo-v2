@@ -1,0 +1,173 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>toolshim — documentation</title><style>
+:root{--bg:#f2f5f4;--ink:#12262b;--mute:#53686d;--line:#cfdad8;--card:#fff;--accent:#0b6b6f;--accent-ink:#fff;--code:#e6eeec;--warn:#9a3412}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a1d;--ink:#e3eeec;--mute:#93aaa8;--line:#25393c;--card:#142427;--accent:#4fc3c0;--accent-ink:#06201f;--code:#1b3033;--warn:#fdba74}}
+*{box-sizing:border-box}html{scroll-padding-top:1rem}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Segoe UI",system-ui,sans-serif;padding-top:env(safe-area-inset-top,0)}
+main{max-width:62rem;margin:0 auto;padding:2rem 1.25rem 4rem}
+h1,h2,h3{font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;line-height:1.2}
+h1{font-size:2.4rem;margin:.2rem 0}h2{font-size:1.6rem;margin:3rem 0 .8rem;border-top:2px solid var(--ink);padding-top:1rem}h3{font-size:1.2rem;margin:2rem 0 .3rem}
+.lead{color:var(--mute);max-width:46rem}
+code{font-family:Consolas,"Cascadia Mono",monospace;font-size:.88em;background:var(--code);padding:.1em .35em;border-radius:3px}
+pre{background:var(--code);padding:1rem;overflow-x:auto;border-radius:4px;line-height:1.5}pre code{background:none;padding:0}
+.flow{display:flex;flex-wrap:wrap;gap:.5rem;align-items:stretch;margin:1rem 0;padding:0;list-style:none;counter-reset:s}
+.flow li{flex:1 1 11rem;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);padding:.6rem .8rem;border-radius:3px;font-size:.92rem;counter-increment:s}
+.flow li::before{content:counter(s) ". ";color:var(--accent);font-weight:700}
+.flow li b{display:block}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;background:var(--card)}
+th,td{border:1px solid var(--line);padding:.45rem .7rem;text-align:left;vertical-align:top}th{background:var(--code)}
+.fn,.cls{background:var(--card);border:1px solid var(--line);padding:.7rem 1rem;margin:.6rem 0;border-radius:3px}
+.fn.sub{margin-left:1.5rem;background:transparent}.cls>.fn{margin-left:1rem}
+.sig{display:inline-block;font-weight:600;word-break:break-word}.fn p,.cls>p{margin:.35rem 0 0;white-space:pre-line}
+.route{margin-left:.6rem;background:var(--accent);color:var(--accent-ink);font-size:.78rem;padding:.1rem .5rem;border-radius:3px;font-family:Consolas,monospace}
+nav ul{columns:2;padding-left:1.1rem}nav a{color:var(--accent)}
+.note{border-left:4px solid var(--warn);padding:.2rem 1rem;background:var(--card)}
+@media(max-width:640px){h1{font-size:1.8rem}nav ul{columns:1}.fn.sub{margin-left:.5rem}}
+</style></head><body><main>
+<h1>toolshim</h1>
+<p class="lead">Une couche entre ton application et Ollama. Quand un modèle ne sait pas appeler d'outils, toolshim lui apprend le format par le prompt, force une sortie JSON valide, vérifie les arguments, puis rend au client de vrais <code>tool_calls</code>, comme si le modèle les gérait nativement.</p>
+
+<h2 id="demarrage">Démarrage</h2>
+<pre><code>pip install -r requirements.txt
+python -m toolshim --port 8330            # proxy sur http://127.0.0.1:8330
+python -m unittest discover -s tests      # 15 tests
+python demo_client.py --model qwen3:8b "ajoute 50 VIS-M6 au dépôt"</code></pre>
+<p>Dans l'agent <code>depot</code>, remplace l'adresse Ollama (<code>http://127.0.0.1:11434</code>) par celle du proxy (<code>http://127.0.0.1:8330</code>). Rien d'autre ne change : <code>/v1/chat/completions</code> (OpenAI) et <code>/api/chat</code> (Ollama) sont tous deux interceptés ; toutes les autres routes sont relayées telles quelles.</p>
+
+<h2 id="flux">Ce qui se passe pour une requête</h2>
+<ol class="flow">
+<li><b>Réception</b>Requête chat avec <code>tools</code> (<code>server.handle_chat</code>).</li>
+<li><b>Aiguillage</b>Modèle natif ou sans outils : relais direct. Sinon émulation (<code>capabilities</code>).</li>
+<li><b>Sélection</b>Les 8 outils les plus pertinents sur 63 (<code>selector</code>).</li>
+<li><b>Prompt</b>Catalogue d'outils + format JSON, historique converti en texte (<code>prompting</code>).</li>
+<li><b>Génération</b>Appel Ollama avec schéma JSON imposé (<code>engine</code>).</li>
+<li><b>Validation</b>Nom, arguments obligatoires, types ; si erreur, nouvelle tentative guidée (<code>parsing</code>).</li>
+<li><b>Réponse</b><code>tool_calls</code> au dialecte du client, en bloc ou en flux (<code>formats</code>).</li>
+</ol>
+
+<h2 id="config">Configuration</h2>
+<p>Fichier <code>config.json</code>, surchargeable par variables d'environnement <code>TOOLSHIM_&lt;CHAMP&gt;</code> (ex. <code>TOOLSHIM_PORT=9000</code>, listes séparées par des virgules).</p>
+<div class="table-wrap"><table><tr><th>Champ</th><th>Défaut</th><th>Rôle</th></tr>
+<tr><td><code>upstream_url</code></td><td><code>&#x27;http://127.0.0.1:11434&#x27;</code></td><td>Adresse du serveur Ollama réel.</td></tr>
+<tr><td><code>host</code></td><td><code>&#x27;127.0.0.1&#x27;</code></td><td>Interface d&#x27;écoute du proxy.</td></tr>
+<tr><td><code>port</code></td><td><code>8330</code></td><td>Port d&#x27;écoute du proxy (8330 par défaut).</td></tr>
+<tr><td><code>native_models</code></td><td><code>[]</code></td><td>Motifs de modèles relayés sans émulation (ex. qwen3*).</td></tr>
+<tr><td><code>emulated_models</code></td><td><code>[]</code></td><td>Motifs de modèles toujours émulés ; prioritaire sur native_models.</td></tr>
+<tr><td><code>auto_detect</code></td><td><code>True</code></td><td>Interroge /api/show pour savoir si le modèle gère « tools ».</td></tr>
+<tr><td><code>max_tools_in_prompt</code></td><td><code>8</code></td><td>Nombre maximal d&#x27;outils injectés dans le prompt (sélection par pertinence).</td></tr>
+<tr><td><code>max_retries</code></td><td><code>2</code></td><td>Nouvelles tentatives guidées quand le JSON est invalide.</td></tr>
+<tr><td><code>max_calls_per_turn</code></td><td><code>4</code></td><td>Nombre maximal d&#x27;appels d&#x27;outils par réponse.</td></tr>
+<tr><td><code>request_timeout</code></td><td><code>300.0</code></td><td>Délai maximal d&#x27;une requête amont, en secondes.</td></tr>
+<tr><td><code>constrained_output</code></td><td><code>True</code></td><td>Impose le schéma JSON au décodage (paramètre format d&#x27;Ollama).</td></tr>
+<tr><td><code>temperature</code></td><td><code>0.0</code></td><td>Température par défaut si le client n&#x27;en fournit pas.</td></tr>
+<tr><td><code>disable_thinking</code></td><td><code>False</code></td><td>Envoie think=false pour les modèles à raisonnement.</td></tr>
+<tr><td><code>log_level</code></td><td><code>&#x27;INFO&#x27;</code></td><td>Niveau de journalisation (DEBUG, INFO, WARNING).</td></tr>
+</table></div>
+
+<h2 id="endpoints">Routes</h2>
+<div class="table-wrap"><table><tr><th>Route</th><th>Comportement</th></tr>
+<tr><td><code>POST /v1/chat/completions</code></td><td>Interceptée. Réponse OpenAI : <code>tool_calls</code> avec <code>arguments</code> en chaîne JSON.</td></tr>
+<tr><td><code>POST /api/chat</code></td><td>Interceptée. Réponse Ollama : <code>arguments</code> en objet.</td></tr>
+<tr><td><code>GET /toolshim/health</code></td><td>État du proxy et cache de détection des capacités.</td></tr>
+<tr><td>toute autre route</td><td>Relayée vers Ollama sans modification (tags, embeddings, pull…).</td></tr>
+</table></div>
+
+<h2 id="comportements">Comportements à connaître</h2>
+<ul>
+<li><b>Choix des modèles.</b> Ordre de priorité : <code>emulated_models</code>, <code>native_models</code>, détection automatique (<code>capabilities</code> ou template d'Ollama), émulation par défaut.</li>
+<li><b>tool_choice.</b> <code>"none"</code> retire les outils ; <code>"required"</code> impose au moins un appel ; <code>{"function":{"name":…}}</code> impose cet outil.</li>
+<li><b>Formats tolérés en sortie du modèle.</b> <code>calls</code>, <code>tool_calls</code>, <code>action/parameters</code> (format du plan d'action), JSON dans un bloc <code>```</code> ou précédé de texte, blocs <code>&lt;think&gt;</code>.</li>
+<li><b>Corrections automatiques.</b> Nom d'outil approchant corrigé, arguments convertis au type déclaré (<code>"50"</code> devient <code>50</code>), arguments inconnus ignorés.</li>
+<li><b>Échec après les tentatives.</b> Les appels valides sont gardés ; sinon le texte brut du modèle est renvoyé comme réponse.</li>
+</ul>
+<p class="note">Limites : en émulation, le streaming est rejoué après génération complète (pas de jetons en direct) ; la fiabilité dépend du modèle, d'où l'intérêt de la sélection top-k et des tests sur tes vrais outils.</p>
+
+<h2 id="reference">Référence des fonctions</h2>
+<nav><ul><li><a href="#toolshim/server.py">toolshim/server.py</a></li><li><a href="#toolshim/engine.py">toolshim/engine.py</a></li><li><a href="#toolshim/prompting.py">toolshim/prompting.py</a></li><li><a href="#toolshim/parsing.py">toolshim/parsing.py</a></li><li><a href="#toolshim/selector.py">toolshim/selector.py</a></li><li><a href="#toolshim/capabilities.py">toolshim/capabilities.py</a></li><li><a href="#toolshim/formats.py">toolshim/formats.py</a></li><li><a href="#toolshim/upstream.py">toolshim/upstream.py</a></li><li><a href="#toolshim/config.py">toolshim/config.py</a></li><li><a href="#toolshim/__main__.py">toolshim/__main__.py</a></li><li><a href="#demo_client.py">demo_client.py</a></li></ul></nav>
+<section id="toolshim/server.py"><h3>toolshim/server.py</h3><p class="lead">Entrée HTTP : intercepte les chats, relaie le reste.</p>
+<div class="fn"><code class="sig">async forward(request: Request, path: str, body: bytes | None=None)</code><p>Relaie la requête telle quelle vers l&#x27;amont et renvoie sa réponse en flux (502 si injoignable).</p></div>
+<div class="fn"><code class="sig">async handle_chat(request: Request, flavor: str)</code><p>Relaie si pas d&#x27;outils ou modèle natif ; sinon émule le tool calling et répond dans le dialecte du client.</p></div>
+<div class="fn"><code class="sig">create_app(cfg=None, upstream=None, detector=None) -&gt; FastAPI</code><p>Fabrique l&#x27;application (upstream et detector injectables pour les tests).</p></div>
+<div class="fn sub"><code class="sig">async lifespan(app: FastAPI)</code><p>Instancie amont, détecteur et moteur au démarrage ; ferme le client à l&#x27;arrêt.</p></div>
+<div class="fn sub"><code class="sig">async health(request: Request)</code><span class="route">GET /toolshim/health</span><p>État du proxy : amont configuré et cache de détection des capacités.</p></div>
+<div class="fn sub"><code class="sig">async openai_chat(request: Request)</code><span class="route">POST /v1/chat/completions</span><p>Endpoint compatible OpenAI.</p></div>
+<div class="fn sub"><code class="sig">async ollama_chat(request: Request)</code><span class="route">POST /api/chat</span><p>Endpoint natif Ollama.</p></div>
+<div class="fn sub"><code class="sig">async passthrough(path: str, request: Request)</code><span class="route">ANY /{path:path}</span><p>Relais transparent de toutes les autres routes (tags, embeddings, pull…).</p></div>
+</section>
+<section id="toolshim/engine.py"><h3>toolshim/engine.py</h3><p class="lead">Moteur d&#x27;émulation et boucle de nouvelles tentatives.</p>
+<div class="cls"><code class="sig">class Result</code><p>Résultat d&#x27;une émulation : appels validés, texte de réponse, tentatives utilisées, réponse amont brute.</p>
+</div>
+<div class="fn"><code class="sig">build_options(body: dict, cfg) -&gt; dict</code><p>Options de génération pour l&#x27;amont, depuis les champs OpenAI (max_tokens…) ou Ollama (options).</p></div>
+<div class="fn"><code class="sig">choice_rule(tool_choice, tools: list)</code><p>Interprète tool_choice. Retourne (outils retenus, règle ajoutée au prompt, appel obligatoire ?).</p></div>
+<div class="cls"><code class="sig">class Emulator</code><p>Émule le tool calling au-dessus d&#x27;un modèle qui ne sait que produire du texte.</p>
+<div class="fn sub"><code class="sig">__init__(self, cfg, upstream)</code><p>Mémorise la configuration et le client amont.</p></div>
+<div class="fn sub"><code class="sig">_validate(calls: list, by_name: dict)</code><p>Valide chaque appel. Retourne (appels valides, erreurs).</p></div>
+<div class="fn sub"><code class="sig">async run(self, body: dict) -&gt; Result</code><p>Traite une requête chat avec `tools` : retourne les appels d&#x27;outils ou la réponse finale.</p></div>
+</div>
+</section>
+<section id="toolshim/prompting.py"><h3>toolshim/prompting.py</h3><p class="lead">Prompt, schéma JSON contraint, conversion de l&#x27;historique.</p>
+<div class="fn"><code class="sig">build_envelope_schema(names: list, max_calls: int) -&gt; dict</code><p>Schéma JSON imposé au modèle (décodage contraint) : {calls:[{name,arguments}], reply}.</p></div>
+<div class="fn"><code class="sig">render_tool(tool: dict) -&gt; str</code><p>Décrit un outil : signature typée (* = obligatoire), description, puis description des arguments.</p></div>
+<div class="fn"><code class="sig">build_system_prompt(original: str, tools: list, max_calls: int, extra_rule: str | None=None) -&gt; str</code><p>Assemble le prompt système d&#x27;origine, le catalogue d&#x27;outils et les règles de format.</p></div>
+<div class="fn"><code class="sig">flatten_content(content)</code><p>Retourne (texte, images base64) depuis un contenu str ou une liste de parties OpenAI.</p></div>
+<div class="fn"><code class="sig">args_dict(raw) -&gt; dict</code><p>Arguments d&#x27;appel en dict (OpenAI les fournit sous forme de chaîne JSON).</p></div>
+<div class="fn"><code class="sig">convert_messages(messages: list)</code><p>Transforme l&#x27;historique (tool_calls, rôle tool) en dialogue texte pur. Retourne (system, messages).</p></div>
+<div class="fn"><code class="sig">used_tool_names(messages: list) -&gt; list</code><p>Noms des outils déjà appelés dans l&#x27;historique (gardés dans la sélection).</p></div>
+<div class="fn"><code class="sig">last_user_text(messages: list) -&gt; str</code><p>Texte du dernier message utilisateur réel (sert de requête à la sélection d&#x27;outils).</p></div>
+</section>
+<section id="toolshim/parsing.py"><h3>toolshim/parsing.py</h3><p class="lead">Extraction du JSON, normalisation, validation des appels.</p>
+<div class="fn"><code class="sig">strip_think(text: str) -&gt; str</code><p>Retire les blocs &lt;think&gt;…&lt;/think&gt; des modèles à raisonnement.</p></div>
+<div class="fn"><code class="sig">_balanced_end(text: str, start: int)</code><p>Index de l&#x27;accolade/crochet fermant qui équilibre celui de `start` (chaînes respectées), sinon None.</p></div>
+<div class="fn"><code class="sig">extract_json(text: str)</code><p>Extrait le premier JSON d&#x27;un texte (think, blocs ``` et prose ignorés). None si rien d&#x27;exploitable.</p></div>
+<div class="fn"><code class="sig">normalize_envelope(obj)</code><p>Ramène les variantes courantes (calls, tool_calls, action/parameters, name/arguments) à (appels, réponse).</p></div>
+<div class="fn"><code class="sig">resolve_tool_name(name: str, names: list)</code><p>Nom d&#x27;outil exact, insensible à la casse ou approchant (difflib) ; None si introuvable.</p></div>
+<div class="fn"><code class="sig">coerce_value(value, schema)</code><p>Convertit value vers le type JSON-schema déclaré quand c&#x27;est sans ambiguïté ; sinon la rend telle quelle.</p></div>
+<div class="fn"><code class="sig">validate_call(call: dict, tools_by_name: dict)</code><p>Valide un appel (nom, arguments, obligatoires, types, enums). Retourne (appel_nettoyé|None, erreurs).</p></div>
+</section>
+<section id="toolshim/selector.py"><h3>toolshim/selector.py</h3><p class="lead">Sélection des outils pertinents parmi 63.</p>
+<div class="fn"><code class="sig">normalize_tools(tools) -&gt; list</code><p>Uniformise les outils OpenAI/Ollama en dicts {name, description, parameters}.</p></div>
+<div class="fn"><code class="sig">tokenize(text: str) -&gt; list</code><p>Mots en minuscules sans accents, tronqués à 5 lettres (racinisation grossière FR/EN).</p></div>
+<div class="fn"><code class="sig">_tool_tokens(tool: dict)</code><p>Retourne (mots du nom, mots de la description et des paramètres) d&#x27;un outil.</p></div>
+<div class="fn"><code class="sig">select_tools(tools: list, query: str, k: int, pinned=()) -&gt; list</code><p>Garde au plus k outils : d&#x27;abord les « épinglés » (déjà utilisés), puis les mieux notés (TF-IDF, nom x3).</p></div>
+</section>
+<section id="toolshim/capabilities.py"><h3>toolshim/capabilities.py</h3><p class="lead">Détection des modèles natifs (relayés tels quels).</p>
+<div class="fn"><code class="sig">matches(model: str, patterns: list) -&gt; bool</code><p>True si le nom du modèle correspond à l&#x27;un des motifs fnmatch (insensible à la casse).</p></div>
+<div class="cls"><code class="sig">class CapabilityDetector</code><p>Priorité : emulated_models &gt; native_models &gt; détection Ollama (/api/show) &gt; émulation.</p>
+<div class="fn sub"><code class="sig">__init__(self, cfg, upstream)</code><p>Prépare le cache modèle -&gt; bool.</p></div>
+<div class="fn sub"><code class="sig">async supports_native_tools(self, model: str) -&gt; bool</code><p>True si le modèle doit être relayé tel quel, False s&#x27;il faut émuler.</p></div>
+<div class="fn sub"><code class="sig">async _probe(self, model: str)</code><p>Interroge /api/show : « tools » dans capabilities, ou .Tools dans le template. None si l&#x27;amont échoue.</p></div>
+</div>
+</section>
+<section id="toolshim/formats.py"><h3>toolshim/formats.py</h3><p class="lead">Réponses au format OpenAI / Ollama, bloc ou flux.</p>
+<div class="fn"><code class="sig">new_call_id() -&gt; str</code><p>Identifiant d&#x27;appel d&#x27;outil au format OpenAI (call_xxx).</p></div>
+<div class="fn"><code class="sig">_usage(raw: dict)</code><p>Retourne (tokens prompt, tokens générés) depuis la réponse Ollama brute.</p></div>
+<div class="fn"><code class="sig">to_openai(model: str, calls: list, reply: str, raw: dict) -&gt; dict</code><p>Construit un chat.completion OpenAI (arguments sérialisés en chaîne JSON, finish_reason tool_calls).</p></div>
+<div class="fn"><code class="sig">to_ollama(model: str, calls: list, reply: str, raw: dict) -&gt; dict</code><p>Construit une réponse /api/chat Ollama (arguments en objet).</p></div>
+<div class="fn"><code class="sig">openai_sse(resp: dict)</code><p>Rejoue une réponse OpenAI complète en flux SSE : un delta, la fin, puis [DONE].</p></div>
+<div class="fn"><code class="sig">ollama_ndjson(resp: dict)</code><p>Rejoue une réponse Ollama en NDJSON : la ligne message, puis la ligne done.</p></div>
+</section>
+<section id="toolshim/upstream.py"><h3>toolshim/upstream.py</h3><p class="lead">Client HTTP vers Ollama.</p>
+<div class="cls"><code class="sig">class Upstream</code><p>Enveloppe httpx : appels chat non streamés, /api/show et relais brut en flux.</p>
+<div class="fn sub"><code class="sig">__init__(self, cfg)</code><p>Crée le client httpx pointant sur cfg.upstream_url.</p></div>
+<div class="fn sub"><code class="sig">async chat(self, payload: dict) -&gt; dict</code><p>POST /api/chat (stream=false) et renvoie le JSON de réponse.</p></div>
+<div class="fn sub"><code class="sig">async show(self, model: str) -&gt; dict</code><p>POST /api/show : métadonnées et capacités du modèle.</p></div>
+<div class="fn sub"><code class="sig">async open_stream(self, method: str, path: str, content: bytes, headers: dict, params: dict)</code><p>Ouvre une requête brute vers l&#x27;amont et renvoie la réponse httpx non consommée (flux).</p></div>
+<div class="fn sub"><code class="sig">async aclose(self) -&gt; None</code><p>Ferme le client HTTP.</p></div>
+</div>
+</section>
+<section id="toolshim/config.py"><h3>toolshim/config.py</h3><p class="lead">Configuration.</p>
+<div class="cls"><code class="sig">class Config</code><p>Paramètres du proxy (valeurs par défaut adaptées à un Ollama local).</p>
+</div>
+<div class="fn"><code class="sig">_coerce(raw, current)</code><p>Convertit une valeur brute (texte d&#x27;environnement ou JSON) vers le type du champ par défaut.</p></div>
+<div class="fn"><code class="sig">load_config(path: str | None=None) -&gt; Config</code><p>Charge config.json (optionnel) puis applique les variables TOOLSHIM_&lt;CHAMP&gt;.</p></div>
+</section>
+<section id="toolshim/__main__.py"><h3>toolshim/__main__.py</h3><p class="lead">Lancement en ligne de commande.</p>
+<div class="fn"><code class="sig">main() -&gt; None</code><p>Lit les arguments, charge la configuration et démarre le serveur uvicorn.</p></div>
+</section>
+<section id="demo_client.py"><h3>demo_client.py</h3><p class="lead">Client d&#x27;exemple avec trois outils « dépôt ».</p>
+<div class="fn"><code class="sig">depot_lister(categorie: str=&#x27;&#x27;) -&gt; list</code><p>Liste les références du dépôt (filtre optionnel par préfixe).</p></div>
+<div class="fn"><code class="sig">depot_stock(reference: str) -&gt; dict</code><p>Retourne la quantité en stock d&#x27;une référence.</p></div>
+<div class="fn"><code class="sig">depot_entrer(reference: str, quantite: int) -&gt; dict</code><p>Ajoute une quantité au stock et retourne le nouveau total.</p></div>
+<div class="fn"><code class="sig">_tool(name, description, props, required)</code><p>Fabrique la déclaration d&#x27;un outil au format OpenAI.</p></div>
+<div class="fn"><code class="sig">run_agent(base_url: str, model: str, prompt: str, max_steps: int=5) -&gt; str</code><p>Boucle agent : appelle le proxy, exécute les tool_calls localement, renvoie le résultat au modèle.</p></div>
+<div class="fn"><code class="sig">main() -&gt; None</code><p>Point d&#x27;entrée CLI : python demo_client.py --model qwen3:8b &quot;ajoute 50 vis M6&quot;.</p></div>
+</section></main></body></html>
