@@ -44,6 +44,7 @@
         @{ Depot = 'frontend\vite.config.ts';     Vivant = 'E:\ia\frontend\vite.config.ts' }
         @{ Depot = 'frontend\vitest.config.ts';   Vivant = 'E:\ia\frontend\vitest.config.ts' }
         @{ Depot = 'frontend\.oxlintrc.json';     Vivant = 'E:\ia\frontend\.oxlintrc.json' }
+        @{ Depot = 'frontend\public\favicon.svg'; Vivant = 'E:\ia\frontend\public\favicon.svg' }   # icone d'onglet
         # Configuration
         @{ Depot = 'config\models.json'; Vivant = 'E:\ia\config\models.json' }
         @{ Depot = 'config\services.json'; Vivant = 'E:\ia\config\services.json' }   # services du superviseur (relu a chaud)
