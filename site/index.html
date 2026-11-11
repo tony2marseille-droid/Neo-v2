@@ -8,7 +8,8 @@
 <meta name="description" content="Néo V2 : un assistant IA complet qui tourne entièrement sur ton PC. Conversation, images 4K, retouche, vidéo, documents, 3D et voix, en français, sans abonnement ni cloud. Licence MIT.">
 <meta property="og:title" content="Néo V2 — l'IA complète qui vit sur ton PC">
 <meta property="og:description" content="Conversation, images 4K, retouche, vidéo, documents, 3D et voix. 100 % local, en français, licence MIT.">
-<meta property="og:image" content="medias/portrait_2.jpg">
+<meta property="og:image" content="https://tony2marseille-droid.github.io/Neo-v2/medias/banniere.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -225,6 +226,17 @@ td:nth-child(3) b{color:var(--phosphore);font-weight:600}
 .galerie figcaption{position:absolute;left:12px;bottom:12px;font:500 .74rem/1 var(--mono);background:rgba(3,8,5,.8);color:var(--ecume);padding:7px 10px;border-radius:999px}
 @media (max-width:760px){.galerie{grid-template-columns:minmax(0,1fr)}.galerie figure:nth-child(n){grid-column:auto;grid-row:auto}.galerie figure:nth-child(1) img{aspect-ratio:16/9}}
 
+/* ---------- duel V1 / V2 ---------- */
+.duel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(14px,2.5vw,24px);margin:0 auto clamp(40px,5vw,64px);max-width:920px}
+.duel figure{margin:0;display:grid;gap:12px;align-content:start}
+.duel .cadre-img{border-radius:var(--rayon);overflow:hidden;border:1px solid var(--trait);background:var(--sous-bois);aspect-ratio:4/5}
+.duel .cadre-img img{width:100%;height:100%;object-fit:cover;object-position:50% 38%}
+.duel figure.ok .cadre-img{border-color:var(--phosphore);box-shadow:0 0 40px -16px var(--phosphore)}
+.duel figcaption{color:var(--lichen);font-size:.93rem;line-height:1.5;display:grid;gap:8px;justify-items:start}
+.badge{font:600 .74rem/1 var(--mono);letter-spacing:.06em;border-radius:999px;padding:7px 11px}
+.badge.v1{color:var(--lichen);border:1px solid var(--trait)}
+.badge.v2b{color:#03140a;background:var(--phosphore)}
+
 /* ---------- 3D ---------- */
 .atelier{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(20px,3vw,36px);align-items:stretch}
 @media (max-width:900px){.atelier{grid-template-columns:minmax(0,1fr)}}
@@ -247,6 +259,14 @@ td:nth-child(3) b{color:var(--phosphore);font-weight:600}
 .chaine3d{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .chaine3d li{font:500 .78rem/1 var(--mono);color:var(--ecume);border:1px solid var(--trait);border-radius:999px;padding:8px 12px}
 .chaine3d li:not(:last-child)::after{content:" →";color:var(--phosphore)}
+
+/* ---------- en developpement ---------- */
+.chantiers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(16px,2.5vw,24px)}
+@media (max-width:760px){.chantiers{grid-template-columns:minmax(0,1fr)}}
+.chantier{background:var(--nuit);border:1px dashed var(--trait);border-radius:var(--rayon);padding:clamp(20px,3vw,28px);display:grid;gap:12px;align-content:start}
+.chantier .statut{justify-self:start;font:600 .72rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ambre);border:1px solid rgba(255,210,122,.35);border-radius:999px;padding:7px 11px}
+.chantier h3{font-size:1.35rem}
+.chantier p{color:var(--lichen)}
 
 /* ---------- capacités ---------- */
 .capacites{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--trait);border:1px solid var(--trait);border-radius:var(--rayon);overflow:hidden}
@@ -334,6 +354,7 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
       <li><a href="#v2">Nouveautés V2</a></li>
       <li><a href="#trois-d">3D</a></li>
       <li><a href="#architecture">Comment ça marche</a></li>
+      <li><a href="#en-cours">À venir</a></li>
       <li><a href="#installer">Installer</a></li>
     </ul>
     <a class="bouton creux" href="https://github.com/tony2marseille-droid/Neo-v2">GitHub</a>
@@ -367,7 +388,7 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
     <div><b>62</b><span>outils que Néo sait utiliser seul</span></div>
     <div><b>9</b><span>agents spécialisés, un seul routeur</span></div>
     <div><b>3840×2160</b><span>pixels par image, générée en local</span></div>
-    <div><b>8 Mo</b><span>de mémoire pour le serveur Rust</span></div>
+    <div><b>9,3 Mo</b><span>de mémoire pour le serveur Rust, mesuré aujourd'hui</span></div>
   </div>
 </header>
 
@@ -391,7 +412,7 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
       <div class="avant-apres" id="comparer" style="--pos:50%">
         <img src="medias/visage_apres.jpg" alt="Détail d'un visage après la passe de détail&nbsp;: grain de peau et cils nets" loading="lazy">
         <img class="haut" src="medias/visage_avant.jpg" alt="Le même détail avant la passe&nbsp;: peau lisse et floue" loading="lazy">
-        <span class="lib g">Avant</span><span class="lib d">Néo V2</span>
+        <span class="lib g">Sans la passe</span><span class="lib d">Avec la passe visage</span>
         <div class="poignee" aria-hidden="true"></div>
         <label class="sr" for="curseur" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Comparer avant et après</label>
         <input type="range" id="curseur" min="0" max="100" value="50">
@@ -432,84 +453,22 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
   <div class="cadre">
     <div class="entete">
       <span class="etiquette">De la V1 à la V2</span>
-      <h2>Trois semaines de travail, mesurées.</h2>
+      <h2>Même phrase, même machine. Juge par toi-même.</h2>
+      <p class="chapeau">La V1 peignait avec FLUX.1-schnell. La V2 a son propre studio. Les deux images ci-dessous ont été produites aujourd'hui, à partir de la même phrase, sur la même carte graphique.</p>
       <div class="frise"><b>V1 · 25 oct. 2026</b><span class="ligne" aria-hidden="true"></span><span>77 commits · +43 642 lignes</span><span class="ligne" aria-hidden="true"></span><b>V2 · 11 nov. 2026</b></div>
+    </div>
+
+    <p class="consigne"><span>phrase&nbsp;:</span> portrait d'une jeune femme aux taches de rousseur et aux cheveux cuivrés, lumière douce d'une fenêtre, peau très détaillée, yeux verts, rendu photo argentique</p>
+    <div class="duel">
+      <figure><div class="cadre-img"><img src="medias/v1_rousse.jpg" alt="Portrait produit par le moteur de la V1, FLUX.1-schnell" loading="lazy"></div><figcaption><span class="badge v1">V1 · FLUX.1-schnell</span>Cheveux châtain clair au lieu de cuivrés, taches de rousseur qui semblent peintes, rendu « HDR » plutôt qu'argentique. Image recadrée en portrait : ce moteur ne produit qu'en paysage.</figcaption></figure>
+      <figure class="ok"><div class="cadre-img"><img src="medias/portrait_2.jpg" alt="Portrait produit par le studio de la V2" loading="lazy"></div><figcaption><span class="badge v2b">V2 · studio Néo</span>Cheveux cuivrés, peau et taches naturelles, grain argentique. 71 s, vérifiée par la vision (9/10).</figcaption></figure>
     </div>
 
     <div class="compteurs">
       <div class="compteur"><span class="q">Agents spécialisés</span><div class="v"><s>7</s><b>9</b></div><span class="d">+ recherche web, dépôt de code</span></div>
       <div class="compteur"><span class="q">Outils disponibles</span><div class="v"><s>41</s><b>62</b></div><span class="d">+51 %</span></div>
       <div class="compteur"><span class="q">Tests automatisés</span><div class="v"><s>4</s><b>340</b></div><span class="d">209 Python · 107 Rust · 24 interface</span></div>
-      <div class="compteur"><span class="q">Score de conversation</span><div class="v"><s>84,4</s><b>93,7</b></div><span class="d">sur 100 · banc de 27 questions</span></div>
-    </div>
-
-    <div class="graphes">
-      <div class="graphe">
-        <div>
-          <h3>Moins d'attente, à chaque étape</h3>
-          <p class="sous">Durée en secondes sur la machine de référence. Plus le point vert est à gauche, mieux c'est.</p>
-        </div>
-        <div class="legende"><span><i class="a"></i>Avant</span><span><i class="p"></i>Néo V2</span></div>
-        <div class="haltere">
-          <div class="r">
-            <div class="t"><b>Retoucher une photo</b><span>9 à 27× plus rapide</span></div>
-            <div class="piste">
-              <div class="lien" style="left:7.27%;width:56.37%"></div>
-              <div class="plage a" style="left:63.64%;width:35.45%"></div>
-              <div class="plage p" style="left:3.64%;width:3.63%"></div>
-              <span class="val" style="left:81.4%">140–218 s</span>
-              <span class="val" style="left:5.5%;color:var(--phosphore)">8–16 s</span>
-            </div>
-          </div>
-          <div class="r">
-            <div class="t"><b>Créer une image 4K (outil complet)</b><span>−37 %</span></div>
-            <div class="piste">
-              <div class="lien" style="left:36.36%;width:20.91%"></div>
-              <div class="pt a" style="left:57.27%"></div>
-              <div class="pt p" style="left:36.36%"></div>
-              <span class="val" style="left:57.27%">126 s</span>
-              <span class="val" style="left:36.36%;color:var(--phosphore)">~80 s</span>
-            </div>
-          </div>
-          <div class="r">
-            <div class="t"><b>Animer un plan vidéo de 3 s</b><span>−35 %</span></div>
-            <div class="piste">
-              <div class="lien" style="left:50%;width:27.27%"></div>
-              <div class="pt a" style="left:77.27%"></div>
-              <div class="pt p" style="left:50%"></div>
-              <span class="val" style="left:77.27%">~170 s</span>
-              <span class="val" style="left:50%;color:var(--phosphore)">~110 s</span>
-            </div>
-          </div>
-          <div class="r">
-            <div class="t"><b>Image du banc d'essai (moyenne de 3)</b><span>−23 %</span></div>
-            <div class="piste">
-              <div class="lien" style="left:33.59%;width:9.86%"></div>
-              <div class="pt a" style="left:43.45%"></div>
-              <div class="pt p" style="left:33.59%"></div>
-              <span class="val" style="left:46%">95,6 s</span>
-              <span class="val" style="left:31%;color:var(--phosphore)">73,9 s</span>
-            </div>
-          </div>
-          <div class="axe" aria-hidden="true"><span style="left:0">0 s</span><span style="left:22.73%">50</span><span style="left:45.45%">100</span><span style="left:68.18%">150</span><span style="left:100%">220 s</span></div>
-        </div>
-      </div>
-
-      <div class="graphe">
-        <div>
-          <h3>Des réponses plus justes</h3>
-          <p class="sous">Banc de 27 questions noté sur 100 par un juge automatique, avant et après la refonte de novembre.</p>
-        </div>
-        <div class="legende"><span><i class="a"></i>Avant</span><span><i class="p"></i>Néo V2</span></div>
-        <div class="barres">
-          <div class="r"><span class="n g">Score global</span><div class="duo"><div class="b" style="width:84.4%"><em>84,4</em></div><div class="b p" style="width:93.7%"><em>93,7</em></div></div></div>
-          <div class="r"><span class="n">Identité</span><div class="duo"><div class="b" style="width:30%"><em>30</em></div><div class="b p" style="width:95%"><em>95</em></div></div></div>
-          <div class="r"><span class="n">Code</span><div class="duo"><div class="b" style="width:80%"><em>80</em></div><div class="b p" style="width:100%"><em>100</em></div></div></div>
-          <div class="r"><span class="n">Conversation</span><div class="duo"><div class="b" style="width:88%"><em>88</em></div><div class="b p" style="width:92%"><em>92</em></div></div></div>
-          <div class="r"><span class="n">Raisonnement</span><div class="duo"><div class="b" style="width:91.7%"><em>91,7</em></div><div class="b p" style="width:91.7%"><em>91,7</em></div></div></div>
-          <div class="r"><span class="n">Explication</span><div class="duo"><div class="b" style="width:93.3%"><em>93,3</em></div><div class="b p" style="width:93.3%"><em>93,3</em></div></div></div>
-        </div>
-      </div>
+      <div class="compteur"><span class="q">Retouche d'une photo</span><div class="v"><s>140–218 s</s><b>17 s</b></div><span class="d">FLUX Kontext (V1) → FLUX.2-klein (V2)</span></div>
     </div>
 
     <div class="table-defile">
@@ -517,18 +476,19 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
         <thead><tr><th>Domaine</th><th>V1 (octobre)</th><th>V2 (novembre)</th></tr></thead>
         <tbody>
           <tr><td>Cerveau</td><td>Qwen3 8B + un second modèle pour la vision</td><td><b>Gemma 4 12B</b>, qui voit et raisonne dans un seul modèle</td></tr>
-          <tr><td>Images 4K</td><td>FLUX schnell / Kontext + agrandissement</td><td><b>Z-Image-Turbo en 3840×2160</b>, brief d'artiste, passes visage et yeux, vérification par la vision</td></tr>
-          <tr><td>Retouche</td><td>FLUX Kontext, 140 à 218 s, scène recréée</td><td><b>FLUX.2-klein en 8 à 16 s</b>, visage et cadrage conservés, 22 filtres en direct</td></tr>
-          <tr><td>Vidéo</td><td>absente</td><td><b>Storyboard → Wan 2.2 → montage</b> : un vrai mouvement, pas un simple zoom</td></tr>
+          <tr><td>Images</td><td>FLUX.1-schnell, puis agrandissement</td><td><b>Studio Néo&nbsp;:</b> brief d'artiste, Z-Image-Turbo en 4K, passes visage et yeux, vérification par la vision</td></tr>
+          <tr><td>Retouche</td><td>FLUX Kontext&nbsp;: la scène entière est recréée</td><td><b>FLUX.2-klein&nbsp;:</b> seul ce que tu demandes change, 22 filtres en direct</td></tr>
+          <tr><td>Vidéo</td><td>absente</td><td><b>Storyboard → Wan 2.2 → montage</b>&nbsp;: un vrai mouvement</td></tr>
           <tr><td>Documents</td><td>Word, PDF, Excel</td><td><b>+ PowerPoint</b>, formules Excel vérifiées, montants à la française</td></tr>
           <tr><td>Connaissances</td><td>absentes</td><td><b>Fiches</b> (résumé, points clés, sources) que Néo réutilise</td></tr>
-          <tr><td>3D</td><td>TripoSR, d'après une photo</td><td><b>Pièces paramétriques en 3 s</b> et Hunyuan3D d'après une simple phrase</td></tr>
+          <tr><td>3D</td><td>TripoSR, d'après une photo</td><td><b>Gabarits paramétriques</b> et <b>Hunyuan3D</b> d'après une simple phrase</td></tr>
           <tr><td>Voix</td><td>Whisper + voix Windows</td><td><b>Parakeet</b> pour la dictée et <b>Piper</b>, une voix neuronale française</td></tr>
-          <tr><td>Interface</td><td>un thème Matrix</td><td><b>5 thèmes</b>, 97,5 % des couleurs pilotées par le thème</td></tr>
+          <tr><td>Interface</td><td>un thème</td><td><b>5 thèmes</b></td></tr>
           <tr><td>Fiabilité</td><td>4 tests automatisés</td><td><b>340 tests</b>, intégration continue sur GitHub</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="note">Mesures et images du 11 novembre 2026 sur la machine de référence (RTX 5080 16 Go). Le temps de retouche de la V1 a été mesuré le 9 novembre sur la même machine, avec trois photos.</p>
   </div>
 </section>
 
@@ -537,13 +497,12 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
     <div class="entete">
       <span class="etiquette">Retouche par consigne</span>
       <h2>Tu demandes une retouche. Pas une autre image.</h2>
-      <p class="chapeau">La V1 refaisait toute la scène pour changer un détail. La V2 ne touche qu'à ce que tu demandes, en quelques secondes.</p>
+      <p class="chapeau">Néo ne touche qu'à ce que tu demandes&nbsp;: le visage, la pose et la lumière restent ceux de l'original.</p>
     </div>
-    <p class="consigne"><span>consigne&nbsp;:</span> remplace le fond par un paysage de montagnes enneigées en plein jour, garde le guerrier tel quel</p>
-    <div class="retouche">
-      <figure><div class="img"><img src="medias/retouche_original.jpg" alt="Image d'origine&nbsp;: un guerrier barbu en armure sur fond sombre" loading="lazy"></div><figcaption><b>L'original</b>Image générée par Néo.</figcaption></figure>
-      <figure class="ok"><div class="img"><img src="medias/retouche_v2.jpg" alt="Retouche V2&nbsp;: même guerrier, même pose, fond de montagnes enneigées" loading="lazy"></div><figcaption><b>Néo V2 · 8 à 16 s</b>Même visage, même pose, même cadrage. Seul le décor a changé.</figcaption></figure>
-      <figure><div class="img large"><img src="medias/retouche_v1.jpg" alt="Retouche V1&nbsp;: la scène entière a été recréée, autre cadrage" loading="lazy"></div><figcaption><b>V1 · 140 à 218 s</b>Le décor est bon, mais tout le reste a été réinventé.</figcaption></figure>
+    <p class="consigne"><span>consigne&nbsp;:</span> ajoute-lui un bonnet de laine rouge et une barbe blanche bien taillée, garde son visage, son ciré et la lumière</p>
+    <div class="duel">
+      <figure><div class="cadre-img"><img src="medias/portrait_1.jpg" alt="Portrait d'origine du vieux marin" loading="lazy"></div><figcaption><span class="badge v1">Original</span>Portrait généré par Néo.</figcaption></figure>
+      <figure class="ok"><div class="cadre-img"><img src="medias/retouche_marin.jpg" alt="Le même marin avec un bonnet rouge et une barbe blanche" loading="lazy"></div><figcaption><span class="badge v2b">Retouché · 17 s</span>Bonnet et barbe ajoutés, le reste est intact.</figcaption></figure>
     </div>
   </div>
 </section>
@@ -551,15 +510,16 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
 <section class="bande" id="galerie" style="padding-top:0">
   <div class="cadre">
     <div class="entete">
-      <span class="etiquette">Galerie 4K</span>
+      <span class="etiquette">Galerie 4K · générée aujourd'hui</span>
       <h2>Du photoréalisme à l'imaginaire.</h2>
+      <p class="chapeau">Cinq phrases, cinq images en 3840 × 2160, 43 à 69 secondes chacune sur la carte graphique.</p>
     </div>
     <div class="galerie">
-      <figure><img src="medias/mars.jpg" alt="Paysage martien généré en 4K" loading="lazy"><figcaption>3840×2160 · Mars</figcaption></figure>
-      <figure><img src="medias/dragon_feu.jpg" alt="Dragon de feu généré en 4K" loading="lazy"><figcaption>Dragon de feu</figcaption></figure>
-      <figure><img src="medias/dragon_glaces.jpg" alt="Dragon des glaces généré en 4K" loading="lazy"><figcaption>Dragon des glaces</figcaption></figure>
-      <figure><img src="medias/boulanger.jpg" alt="Boulanger dans son fournil, image générée" loading="lazy"><figcaption>Le boulanger</figcaption></figure>
-      <figure><img src="medias/sr71.jpg" alt="Avion SR-71 généré d'après une photo de référence" loading="lazy" style="aspect-ratio:16/9"><figcaption>SR-71 · sujet réel, fidèle à la référence</figcaption></figure>
+      <figure><img src="medias/galerie_islande.jpg" alt="Bateau de pêche échoué sur une plage de sable noir sous une aurore boréale" loading="lazy"><figcaption>Aurore boréale, Islande</figcaption></figure>
+      <figure><img src="medias/galerie_renard.jpg" alt="Renard roux dans une forêt enneigée au lever du soleil" loading="lazy"><figcaption>Renard au lever du soleil</figcaption></figure>
+      <figure><img src="medias/galerie_kyoto.jpg" alt="Ruelle de Kyoto sous la pluie, lanternes rouges" loading="lazy"><figcaption>Kyoto sous la pluie</figcaption></figure>
+      <figure><img src="medias/galerie_phare.jpg" alt="Phare breton dans une tempête au crépuscule" loading="lazy"><figcaption>Phare dans la tempête</figcaption></figure>
+      <figure><img src="medias/galerie_cite.jpg" alt="Cité futuriste suspendue au-dessus des nuages" loading="lazy"><figcaption>Cité au-dessus des nuages</figcaption></figure>
     </div>
   </div>
 </section>
@@ -629,12 +589,26 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
   </div>
 </section>
 
+<section class="bande v2" id="en-cours">
+  <div class="cadre">
+    <div class="entete">
+      <span class="etiquette">En développement</span>
+      <h2>Ce qui arrive ensuite.</h2>
+      <p class="chapeau">Néo avance chaque semaine. Deux chantiers sont en cours pour les prochaines versions.</p>
+    </div>
+    <div class="chantiers">
+      <div class="chantier"><span class="statut">En cours</span><h3>Un agent conversationnel en 3D</h3><p>Un personnage animé en trois dimensions qui écoute, répond à voix haute et réagit pendant la conversation, directement dans l'interface.</p></div>
+      <div class="chantier"><span class="statut">En cours</span><h3>Du code fin, dans tous les langages</h3><p>Des fonctions de programmation plus précises pour tous les langages&nbsp;: écrire, relire, corriger et tester du code, du script rapide au projet complet.</p></div>
+    </div>
+  </div>
+</section>
+
 <section class="bande" id="architecture">
   <div class="cadre">
     <div class="entete">
       <span class="etiquette">Comment ça marche</span>
       <h2>Tout se passe à l'intérieur de ta machine.</h2>
-      <p class="chapeau">Un serveur Rust ultra-léger orchestre les modèles et les outils. Internet n'intervient que si tu le demandes.</p>
+      <p class="chapeau">Un serveur Rust ultra-léger (12,4 Mo) orchestre les modèles et les outils. Internet n'intervient que si tu le demandes.</p>
     </div>
     <div class="archi">
       <div class="machine">
@@ -645,7 +619,7 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
           <div class="boite"><b>Applications</b><span>API OpenAI et MCP</span></div>
         </div>
         <div class="fleche" aria-hidden="true">↓</div>
-        <div class="boite coeur"><b>Serveur Néo · Rust</b><span>Choisit l'agent, enchaîne les outils, applique les garde-fous, met les longues tâches en file. 8 Mo de mémoire.</span></div>
+        <div class="boite coeur"><b>Serveur Néo · Rust</b><span>Choisit l'agent, enchaîne les outils, applique les garde-fous, met les longues tâches en file. 9,3 Mo de mémoire.</span></div>
         <div class="fleche" aria-hidden="true">↓</div>
         <div class="couche deux">
           <div class="boite"><b>62 outils · Python</b><span>images, vidéo, documents, 3D, fiches, web, voix</span></div>
@@ -668,26 +642,10 @@ footer .cadre{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-be
       </div>
     </div>
     <div class="socle">
-      <div><s>34,8 Mo →</s><b>8,1 Mo</b><span>mémoire du serveur après le passage de Python à Rust</span></div>
-      <div><s>0,90 ms →</s><b>0,46 ms</b><span>temps de réponse médian du serveur</span></div>
-      <div><s>1 458 →</s><b>3 680 req/s</b><span>débit, soit 2,5 fois plus</span></div>
+      <div><b>9,3 Mo</b><span>mémoire du serveur Rust</span></div>
+      <div><b>0,11 ms</b><span>temps de réponse médian</span></div>
+      <div><b>9 733 req/s</b><span>débit sur 8 connexions</span></div>
     </div>
-  </div>
-</section>
-
-<section class="bande v2" id="interface">
-  <div class="cadre">
-    <div class="entete">
-      <span class="etiquette">L'interface</span>
-      <h2>Belle dès le premier lancement.</h2>
-      <p class="chapeau">Un assistant d'installation détecte ta carte graphique et propose les modèles adaptés. Cinq thèmes, du terminal Matrix au pastel.</p>
-    </div>
-    <div class="ecrans">
-      <figure><img src="medias/ui_accueil.jpg" alt="Écran d'accueil de Néo" loading="lazy"><figcaption>L'accueil et l'état de la machine</figcaption></figure>
-      <figure><img src="medias/ui_chat.jpg" alt="Conversation avec Néo" loading="lazy"><figcaption>La conversation, avec les outils en direct</figcaption></figure>
-      <figure><img src="medias/ui_documents.jpg" alt="Gestion des documents dans Néo" loading="lazy"><figcaption>Tes documents, interrogeables</figcaption></figure>
-    </div>
-    <div class="peaux" aria-label="Thèmes disponibles"><span>Oracle</span><span>Cyberpunk</span><span>Rétro</span><span>Aurore</span><span>Cartoon</span></div>
   </div>
 </section>
 
@@ -740,7 +698,7 @@ http://127.0.0.1:8320</pre>
 <footer>
   <div class="cadre">
     <span>Néo V2 · code sous licence MIT · les modèles gardent leurs propres licences</span>
-    <span>Mesures prises sur la machine de référence (RTX 5080 16 Go, Windows 11)</span>
+    <span>Images et mesures du 11 novembre 2026 sur la machine de référence (RTX 5080 16 Go, Windows 11)</span>
   </div>
 </footer>
 

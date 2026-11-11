@@ -1,53 +1,139 @@
-# Néo V2 — Assistant IA 100 % local
+<p align="center">
+  <img src="site/medias/banniere.jpg" alt="Néo V2 : l'IA complète qui vit sur ton PC" width="100%">
+</p>
 
-> Chat, agents à outils, génération d'images 4K photoréalistes fidèles au sujet,
-> 3D/STL imprimable, documents bureautiques, RAG, voix française (mot d'éveil),
-> auto-amélioration continue — **tout tourne sur votre PC ; le cloud et les
-> clés API restent facultatifs.**
+<h1 align="center">Néo V2</h1>
 
-Néo est un assistant IA personnel auto-hébergé qui tourne entièrement en
-local : un **serveur Rust** ultra-léger (8 Mo de RAM, 3 680 req/s), un backend
-Python spécialisé (kernels SD/TTS/STT/3D), **Ollama** pour l'inférence et un
-fine-tune maison. L'ensemble est orchestré comme un majordome numérique :
-agents spécialisés, pont vocal, auto-amélioration par cycles d'entraînement.
+<p align="center">
+  <b>L'IA complète qui vit sur ton PC. Rien ne sort.</b><br>
+  Conversation · images 4K · retouche · vidéo · documents Office · 3D imprimable · voix<br>
+  100 % local, en français, sans abonnement.
+</p>
 
-| ![Portrait généré](site/medias/portrait_2.jpg) | ![Portrait généré](site/medias/portrait_3.jpg) | ![Portrait généré](site/medias/portrait_4.jpg) |
-|---|---|---|
+<p align="center">
+  <img alt="Licence MIT" src="https://img.shields.io/badge/licence-MIT-7dffa8?style=for-the-badge&labelColor=07130b">
+  <img alt="100 % local" src="https://img.shields.io/badge/100%20%25-local-7dffa8?style=for-the-badge&labelColor=07130b">
+  <img alt="Windows 10 et 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-dcf5e2?style=for-the-badge&labelColor=07130b">
+  <img alt="Rust, Python, React" src="https://img.shields.io/badge/Rust%20%C2%B7%20Python%20%C2%B7%20React-dcf5e2?style=for-the-badge&labelColor=07130b">
+</p>
 
-*Portraits générés en local par Néo V2, en une phrase chacun (≈ 75 s sur une RTX 5080). Aucune de ces personnes n'existe.*
+<p align="center">
+  <a href="https://tony2marseille-droid.github.io/Neo-v2/"><b>🌐 Voir la présentation</b></a>
+  &nbsp;·&nbsp; <a href="#-démarrage-rapide"><b>🚀 Installer</b></a>
+  &nbsp;·&nbsp; <a href="docs/TECHNIQUE.md"><b>🏗️ Architecture</b></a>
+  &nbsp;·&nbsp; <a href="docs/DEPENDANCES.md"><b>📜 Licences des modèles</b></a>
+</p>
 
-👉 **Présentation complète : [page de Néo V2](site/index.html)** (publiée sur GitHub Pages).
+---
 
-## 📸 Captures d'écran
+## Aucune de ces personnes n'existe
 
-| Accueil (thème Matrix) | Chat & agents à outils |
+Chaque portrait a été demandé à Néo en **une phrase, en français**, puis peint en 2160 × 3840, retouché (peau, yeux) et vérifié par sa vision, en **≈ 75 secondes sur une seule carte graphique grand public**. Aucune image n'a quitté la machine.
+
+<table>
+  <tr>
+    <td width="33%"><img src="site/medias/portrait_1.jpg" alt="Vieux marin breton en ciré jaune"></td>
+    <td width="33%"><img src="site/medias/portrait_2.jpg" alt="Jeune femme aux taches de rousseur"></td>
+    <td width="33%"><img src="site/medias/portrait_3.jpg" alt="Forgeron devant sa forge"></td>
+  </tr>
+  <tr>
+    <td><img src="site/medias/portrait_4.jpg" alt="Danseuse de flamenco, éclairage Rembrandt"></td>
+    <td><img src="site/medias/portrait_5.jpg" alt="Vieux moine tibétain, montagnes enneigées"></td>
+    <td><img src="site/medias/portrait_6.jpg" alt="Astronaute dans son casque"></td>
+  </tr>
+</table>
+
+## Pourquoi Néo
+
+|  |  |
 |---|---|
-| ![Accueil](assets/capture_accueil.png) | ![Chat](assets/capture_chat.png) |
+| 🔒 **Tes données restent chez toi** | Conversations, documents, photos et mémoire restent sur ton disque. Rien n'est envoyé à une entreprise. |
+| 💸 **Gratuit, et ça le restera** | Code sous licence MIT, modèles open source, aucun abonnement, aucune limite de messages. |
+| 🇫🇷 **Pensé en français** | Personnalité, dictée, voix et documents en français ; montants « 1 234,50 € », TVA calculée dans Excel. |
+| 🧰 **Il agit, il ne fait pas que parler** | 62 outils choisis seul : il crée le fichier Excel, prépare l'impression 3D, cherche une source et la cite. |
+| 🧩 **Tout-en-un** | Conversation, studio photo, vidéo, bureautique, 3D, recherche web et voix dans une seule application. |
+| 📈 **Il progresse avec toi** | Tes notes et son auto-évaluation alimentent un coach hebdomadaire ; tu peux entraîner ton propre modèle. |
 
-| Modèles (filtres T1–T5) | Documents (RAG) | Auto-amélioration |
+## De la V1 à la V2 : même phrase, même machine
+
+Les deux portraits ci-dessous ont été produits **aujourd'hui, à partir de la même phrase, sur la même carte graphique** : à gauche le moteur d'image de la V1 (FLUX.1-schnell), à droite le studio de la V2.
+
+<table>
+  <tr>
+    <td width="50%"><img src="site/medias/v1_rousse.jpg" alt="Portrait produit par le moteur de la V1"></td>
+    <td width="50%"><img src="site/medias/portrait_2.jpg" alt="Portrait produit par le studio de la V2"></td>
+  </tr>
+  <tr><td align="center"><b>V1</b> · FLUX.1-schnell : cheveux châtain clair au lieu de cuivrés, rendu « HDR » (recadrée : ce moteur ne produit qu'en paysage)</td><td align="center"><b>V2</b> · studio Néo : cheveux cuivrés, peau naturelle, grain argentique · 71 s, vérifiée 9/10</td></tr>
+</table>
+
+| | V1 (25 oct. 2026) | **V2 (11 nov. 2026)** |
 |---|---|---|
-| ![Modèles](assets/capture_modeles.png) | ![Documents](assets/capture_documents.png) | ![Fine-tune](assets/capture_finetune.png) |
+| Agents spécialisés | 7 | **9** |
+| Outils | 41 | **62** |
+| Tests automatisés | 4 | **340** |
+| Retouche d'une photo | FLUX Kontext : 140 à 218 s, scène recréée | **FLUX.2-klein : 17 s**, seul ce qui est demandé change |
+| Images | FLUX.1-schnell, puis agrandissement | **Studio Néo** : brief, Z-Image-Turbo 4K, passes visage et yeux, vérification |
+| Vidéo | absente | **Storyboard → Wan 2.2 → montage** |
+| PowerPoint | absent | **oui**, avec formules Excel vérifiées |
+| 3D | TripoSR d'après une photo | **gabarits paramétriques + Hunyuan3D d'après une phrase** |
+| Voix | Whisper + voix Windows | **Parakeet + voix neuronale Piper** |
+| Interface | un thème | **5 thèmes** |
 
-### Exemples de générations 4K (100 % sur votre GPU)
+*Images et mesures du 11 novembre 2026 sur la machine de référence (RTX 5080 16 Go). Le temps de retouche de la V1 a été mesuré le 9 novembre sur la même machine.*
 
-| | | |
-|---|---|---|
-| ![Mars](assets/exemple_mars.jpg) | ![SR-71](assets/exemple_sr71.jpg) | ![Dragon de feu](assets/exemple_dragon_feu.jpg) |
-| **Mars** | **SR-71 au coucher du soleil** | **Dragon des enfers** |
-| ![Dragon de glaces](assets/exemple_dragon_glaces.jpg) | ![Boulanger](assets/exemple_boulanger.jpg) | ![Portrait](assets/exemple_portrait.jpg) |
-| **Dragon de glaces** | **Boulanger devant son four** | **Portrait en forêt (détail)** |
+## De la phrase à l'objet imprimable
 
-*Toutes ces images ont été générées en local par Néo, avec contrôle qualité automatique par le modèle de vision. Les quatre premières datent du studio FLUX ; le boulanger et le portrait viennent du studio actuel (Z-Image-Turbo, visage et yeux retouchés).*
+<p align="center"><img src="site/medias/dragon_3d.jpg" alt="Buste de dragon : référence dessinée par Néo, puis modèle 3D imprimable" width="100%"></p>
 
-## 🚧 Un projet qui avance
+Décris une sculpture ou une pièce : Néo dessine la référence, en tire un **volume fermé prêt à imprimer**, contrôle les dimensions et prépare le fichier pour ton trancheur. Pour les objets courants (support de téléphone, boîte, crochet…), un gabarit paramétrique donne une pièce juste en quelques secondes. **[Fais tourner le dragon en 3D sur la page de présentation](https://tony2marseille-droid.github.io/Neo-v2/#trois-d).**
 
-Néo est en **développement actif** : les fonctionnalités existantes sont
-améliorées en continu (pipeline image 4K avec formats masters TIFF/EXR,
-agents à outils, interface) et de **nouvelles fonctions arrivent** —
-suivi de la consommation de tokens en temps réel, bascule automatique
-entre modèles, envoi Telegram multi-photos, nouveaux connecteurs et
-améliorations de l'auto-amélioration. ⭐ *Star le dépôt pour suivre
-les évolutions !*
+## Retouche par consigne
+
+> « ajoute-lui un bonnet de laine rouge et une barbe blanche bien taillée, garde son visage, son ciré et la lumière »
+
+<table>
+  <tr>
+    <td width="50%"><img src="site/medias/portrait_1.jpg" alt="Portrait d'origine"></td>
+    <td width="50%"><img src="site/medias/retouche_marin.jpg" alt="Le même marin, bonnet rouge et barbe blanche ajoutés"></td>
+  </tr>
+  <tr><td align="center">Original</td><td align="center"><b>Retouché en 17 s</b> : le reste est intact</td></tr>
+</table>
+
+## Galerie 4K, générée aujourd'hui
+
+Cinq phrases, cinq images en 3840 × 2160, **43 à 69 secondes** chacune, notées 8 ou 9/10 par la vision de Néo.
+
+<p align="center"><img src="site/medias/galerie_islande.jpg" alt="Bateau échoué sous une aurore boréale" width="100%"></p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="site/medias/galerie_renard.jpg" alt="Renard dans la neige au lever du soleil"></td>
+    <td width="50%"><img src="site/medias/galerie_kyoto.jpg" alt="Ruelle de Kyoto sous la pluie"></td>
+  </tr>
+  <tr>
+    <td><img src="site/medias/galerie_phare.jpg" alt="Phare dans la tempête"></td>
+    <td><img src="site/medias/galerie_cite.jpg" alt="Cité futuriste au-dessus des nuages"></td>
+  </tr>
+</table>
+
+
+---
+
+<details>
+<summary><b>En deux mots, techniquement</b></summary>
+
+Néo est un assistant IA personnel auto-hébergé : un **serveur Rust** ultra-léger (9,3 Mo de mémoire), un backend Python spécialisé (image, vidéo, 3D, voix, documents), **Ollama** pour les modèles de langage et un fine-tune maison. Tout le détail suit ci-dessous.
+
+</details>
+
+## 🚧 En développement
+
+Néo avance chaque semaine. Deux chantiers sont en cours :
+
+- **Un agent conversationnel en 3D** : un personnage animé qui écoute, répond à voix haute et réagit pendant la conversation, directement dans l'interface.
+- **Du code fin, dans tous les langages** : des fonctions de programmation plus précises pour écrire, relire, corriger et tester du code, du script rapide au projet complet.
+
+⭐ *Mets une étoile au dépôt pour suivre les évolutions.*
 
 ### À savoir avant de l'essayer
 
@@ -72,12 +158,12 @@ n'a pas encore été installé ailleurs :
 | Domaine | Ce que ça fait |
 |---|---|
 | **Chat** | Néo, un personnage qui réfléchit avant de répondre (Gemma 4 12B, vision comprise) ; 9 agents (Néo, dev, documents/RAG, image, recherche web, bureau, système, 3D, dépôt de code), 62 outils, un routeur unique, relance d'un agent qui n'agit pas |
-| **Images 4K** | Studio en trois temps : **comprendre** (brief écrit par le modèle de conversation) → **peindre** (Z-Image-Turbo, 3840×2160, passes visage et yeux) → **vérifier** (contrôle par la vision). Portrait par le chat : ~66 s. Sujet réel nommé : photo de référence cherchée puis validée |
-| **Retouche et filtres** | Retouche par consigne (« change le ciel », « supprime… ») avec FLUX.2-klein en 8 à 16 s ; 22 filtres et effets avec aperçu immédiat, copie en pleine résolution |
-| **Vidéo** | Storyboard → image de chaque plan → **Wan 2.2** (vrai mouvement) → montage ffmpeg ; un plan de 3 s en ~2 min |
+| **Images 4K** | Studio en trois temps : **comprendre** (brief écrit par le modèle de conversation) → **peindre** (Z-Image-Turbo, 3840×2160, passes visage et yeux) → **vérifier** (contrôle par la vision). Portrait par le chat : 71 à 79 s (mesuré le 11/11). Sujet réel nommé : photo de référence cherchée puis validée |
+| **Retouche et filtres** | Retouche par consigne (« change le ciel », « supprime… ») avec FLUX.2-klein en 17 s ; 22 filtres et effets avec aperçu immédiat, copie en pleine résolution |
+| **Vidéo** | Storyboard → image de chaque plan → **Wan 2.2** (vrai mouvement) → montage ffmpeg |
 | **Documents** | Markdown → Word / PDF / Excel / **PowerPoint** : mise en page, formules Excel retrouvées et vérifiées (totaux, TVA, TTC), montants à la française |
 | **Fiches de connaissances** | Néo cherche, rédige et garde des fiches (résumé, points clés, sources) ; il s'en ressert quand le sujet revient |
-| **3D / Impression** | Gabarits paramétriques pour les objets courants (pièce juste en 3 s), script OpenSCAD libre avec boucle de correction, **Hunyuan3D** pour les formes organiques depuis une simple description, réparations/booléens/fusions, rendus Blender, tranchage G-code, contrôle visuel sur 4 vues |
+| **3D / Impression** | Gabarits paramétriques pour les objets courants (de la phrase au fichier 3MF en 35 s), script OpenSCAD libre avec boucle de correction, **Hunyuan3D** pour les formes organiques depuis une simple description, réparations/booléens/fusions, rendus Blender, tranchage G-code, contrôle visuel sur 4 vues |
 | **Système** | météo (Open-Meteo), change (BCE), adresses (IGN), stats PC/GPU, volume, ouverture d'apps, analyse d'écran par vision |
 | **Voix** | mot d'éveil vocal (openWakeWord), dictée Parakeet / Whisper, voix française Piper, client LAN portable |
 | **Auto-amélioration** | feedback utilisateur (1-5) + auto-évaluation (juge interne) + coach hebdomadaire qui transforme les faiblesses en règles injectées dans le prompt |
@@ -92,7 +178,7 @@ n'a pas encore été installé ailleurs :
 └──────────────────────────┬─────────────────────────────────┘
                            │ :8320 (SSE + REST)
 ┌──────────────────────────▼─────────────────────────────────┐
-│  SERVEUR RUST (axum) — 8 Mo RAM, 0,46 ms p50, 3680 req/s   │
+│  SERVEUR RUST (axum) : routage, outils, jobs, sécurité     │
 │  routage agents · boucle outils · gardes-fous · jobs       │
 │  auto-évaluation · feedback/coach · télémétrie             │
 └───────────┬───────────────────────────────┬────────────────┘
@@ -116,12 +202,14 @@ cache** des modèles SD (65 s au lieu de 10-30 min sur SSD QLC).
 
 ## 📊 Chiffres
 
-| Mesure | Python (avant) | **Rust (production)** |
-|---|---|---|
-| RAM serveur | 34,8 Mo | **8,1 Mo** |
-| Latence p50 | 0,90 ms | **0,46 ms** |
-| Débit (8 co) | 1 458 req/s | **3 680 req/s** |
-| Empreinte | venv 138 paquets | **exe 7 Mo** |
+Serveur Rust de la V2, mesuré le 11 novembre 2026 sur la route `/api/health` :
+
+| Mesure | V2 (mesuré aujourd'hui) |
+|---|---|
+| Mémoire du serveur | **9,3 Mo** |
+| Temps de réponse médian | **0,11 ms** |
+| Débit (8 connexions) | **9 733 req/s** |
+| Exécutable | **12,4 Mo** |
 
 👉 Détails complets : [`docs/COMPARATIFS.md`](docs/COMPARATIFS.md) ·
 Architecture : [`docs/TECHNIQUE.md`](docs/TECHNIQUE.md) ·
