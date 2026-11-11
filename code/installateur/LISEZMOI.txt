@@ -1,0 +1,37 @@
+NEO - assistant IA 100 % local
+==============================
+
+Installation (Windows 10 ou 11, 64 bits, sans droits administrateur)
+
+  1. Extrayez cette archive dans le dossier de votre choix, par exemple
+     C:\Neo ou D:\Neo (evitez « Program Files »).
+  2. Clic droit sur « installer.ps1 » > « Executer avec PowerShell ».
+     Ou, dans une console PowerShell ouverte dans ce dossier :
+        powershell -ExecutionPolicy Bypass -File installer.ps1
+  3. Suivez les questions : l'installateur detecte votre carte graphique,
+     installe Python et Ollama si besoin (avec votre accord), puis les
+     dependances et les modeles adaptes a votre machine.
+  4. Lancez Neo avec le raccourci « Neo » du Bureau : l'interface s'ouvre
+     dans votre navigateur (http://127.0.0.1:8320).
+
+Options utiles de l'installateur
+
+  -Reseau          ouvrir Neo aux autres appareils du reseau local
+  -DossierModeles  ranger les modeles sur un autre disque (ex. D:\Modeles)
+  -SansModeles     ne pas telecharger les modeles maintenant
+  -DemarrageAuto   lancer Neo a l'ouverture de session
+  -Desinstaller    retirer Neo (vos donnees sont conservees ; -Tout pour tout effacer)
+
+Reglages
+
+  Tout ce qui depend de votre machine est dans « neo.toml » (cree a
+  l'installation, commente). Relancez Neo apres une modification.
+
+Ce que l'installateur ne fait pas encore
+
+  Le studio image 4K, la video et la 3D par IA demandent des moteurs et des
+  modeles volumineux (plusieurs dizaines de Go) et une carte NVIDIA de
+  12 a 16 Go : voir docs\DEPLOIEMENT.md et docs\MEDIAS.md.
+
+Licence : MIT pour le code de Neo. Les modeles gardent leurs propres
+licences : voir docs\DEPENDANCES.md.

@@ -219,9 +219,22 @@ Installation : [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md)
 
 ## 🚀 Démarrage rapide
 
-1. **Prérequis** : Windows 10/11, Ollama, Rust (build), Python 3.11+. Le chat tourne avec une RTX 8 Go et 32 Go de RAM ; le studio image 4K, la vidéo et la 3D organique sont réglés sur l'installation de référence (RTX 16 Go, 48 Go de RAM).
-2. Suivre [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md) (serveur, venv, modèles, tâches planifiées). Bibliothèques Python : [`code/requirements.txt`](code/requirements.txt).
-3. `cargo build --release` puis lancer `localai-server.exe` → **http://localhost:8320**.
+**Windows 10 ou 11, 64 bits, sans droits administrateur.**
+
+1. Téléchargez l'archive `Neo-…-windows-x64.zip` de la [dernière version](https://github.com/tony2marseille-droid/Neo-v2/releases/latest) et extrayez-la, par exemple dans `C:\Neo`.
+2. Clic droit sur `installer.ps1` → **Exécuter avec PowerShell** (ou `powershell -ExecutionPolicy Bypass -File installer.ps1`).
+   L'installateur détecte votre carte graphique, installe Python et Ollama si besoin (avec votre accord), les dépendances et les modèles adaptés.
+3. Lancez Néo avec le raccourci **« Neo »** : l'interface s'ouvre sur **http://127.0.0.1:8320**.
+
+Tout ce qui dépend de votre machine (dossiers, ports, outils) est réglé dans un seul fichier, **`neo.toml`**, créé et commenté par l'installateur (modèle : [`code/config/neo.exemple.toml`](code/config/neo.exemple.toml)). Options utiles : `-Reseau` (accès depuis le réseau local), `-DossierModeles D:\Modeles`, `-DemarrageAuto`, `-Desinstaller`.
+
+| Matériel | Ce qui fonctionne |
+|---|---|
+| Sans carte NVIDIA | conversation avec de petits modèles, documents, outils, voix, 3D paramétrique |
+| NVIDIA 8 Go, 32 Go de RAM | tout ce qui précède, avec des modèles plus grands |
+| NVIDIA 16 Go, 48 Go de RAM | + studio image 4K, vidéo, 3D par IA, entraînement (moteurs à installer : [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md)) |
+
+Depuis les sources (développeurs) : `cargo build --release` dans `code/localai-rs`, `npm run build` dans `code/frontend`, puis `code/installateur/assembler.ps1` produit l'archive.
 
 ## ⚙️ Variables d'environnement
 

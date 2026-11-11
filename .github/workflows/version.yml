@@ -1,0 +1,92 @@
+name: Archive d'installation
+
+# Compile Neo, assemble l'archive Windows, l'installe a blanc sur une machine
+# vierge et verifie que Neo repond. Sur une etiquette v* (ex. v2.0.0), publie
+# l'archive dans les « Releases » du depot.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - "code/**"
+      - ".github/workflows/version.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    name: Construire, installer a blanc, publier
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: code/localai-rs
+
+      - name: Programmes Rust
+        working-directory: code/localai-rs
+        run: cargo build --release -p localai-server -p localai-watch -p neo-silencieux
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: code/frontend/package-lock.json
+
+      - name: Interface
+        working-directory: code/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Assemblage de l'archive
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { 'ci' }
+          "VERSION=$v" | Out-File -Append $env:GITHUB_ENV
+          powershell -NoProfile -ExecutionPolicy Bypass -File code/installateur/assembler.ps1 -Version $v
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installation a blanc
+        shell: pwsh
+        run: |
+          $d = "dist/Neo-$env:VERSION"
+          powershell -NoProfile -ExecutionPolicy Bypass -File "$d/installer.ps1" -Oui -SansModeles -SansOllama -SansRaccourcis -SansDemarrage -Modules dev
+          if ($LASTEXITCODE -ne 0) { Get-Content "$d/logs/installation.log" -Tail 60; exit 1 }
+
+      - name: Demarrage et controles
+        shell: pwsh
+        run: |
+          $d = (Resolve-Path "dist/Neo-$env:VERSION").Path
+          powershell -NoProfile -ExecutionPolicy Bypass -File "$d/Demarrer-Neo.ps1" -SansNavigateur -AttenteMax 180
+          if ($LASTEXITCODE -ne 0) { Get-ChildItem "$d/logs" | ForEach-Object { "== $($_.Name)"; Get-Content $_.FullName -Tail 40 }; exit 1 }
+          $sante = Invoke-RestMethod http://127.0.0.1:8320/api/health
+          if ($sante.status -ne 'ok') { throw "sante : $($sante | ConvertTo-Json -Compress)" }
+          $job = Invoke-RestMethod -Method Post http://127.0.0.1:8320/api/outil/execute -ContentType 'application/json' -Body '{"tool":"get_datetime","args":{}}'
+          Start-Sleep 5
+          $r = Invoke-RestMethod "http://127.0.0.1:8320/api/outil/job/$($job.job)"
+          if (-not $r.fini -or -not $r.resultat) { throw "outil Python : $($r | ConvertTo-Json -Compress)" }
+          $page = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8320/
+          if ($page.StatusCode -ne 200) { throw "interface : $($page.StatusCode)" }
+          "Neo installe et fonctionnel : $($r.resultat)"
+          powershell -NoProfile -ExecutionPolicy Bypass -File "$d/Arreter-Neo.ps1"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Neo-${{ env.VERSION }}-windows-x64
+          path: dist/*.zip
+
+      - name: Publication de la version
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
