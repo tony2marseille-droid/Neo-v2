@@ -54,9 +54,33 @@ function Demander([string]$question) {
     $r = Read-Host "$question [O/n]"
     return ($r -eq '' -or $r -match '^[oOyY]')
 }
+function Pause-SiFenetre {
+    # Lance par « Executer avec PowerShell », la fenetre se fermerait aussitot :
+    # on laisse le temps de lire (sauf installation silencieuse).
+    if (-not $Oui) { Read-Host 'Appuyez sur Entree pour fermer cette fenetre' | Out-Null }
+}
 function Arreter([string]$message) {
     Ecrire "ERREUR : $message" 'Red'
     Ecrire "Journal complet : $journal" 'Red'
+    Pause-SiFenetre
+    exit 1
+}
+# Commande externe (pip, python, winget, ollama) : ses messages sur la sortie
+# d'erreur (avertissements, barres de progression) ne doivent jamais arreter le
+# script. Sous Windows PowerShell 5.1, avec ErrorActionPreference = Stop, la
+# premiere ligne d'avertissement redirigee par 2>&1 devenait une erreur fatale.
+function Natif([scriptblock]$commande) {
+    $avant = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $commande 2>&1 | ForEach-Object { "$_" } }
+    finally { $ErrorActionPreference = $avant }
+}
+# Toute erreur imprevue : message clair, journal, fenetre maintenue ouverte.
+trap {
+    Ecrire "ERREUR inattendue : $($_.Exception.Message)" 'Red'
+    Ecrire "  a la ligne $($_.InvocationInfo.ScriptLineNumber) : $($_.InvocationInfo.Line.Trim())" 'Red'
+    Ecrire "Journal complet : $journal" 'Red'
+    Pause-SiFenetre
     exit 1
 }
 
@@ -138,7 +162,7 @@ function Trouver-Python {
         if (-not $cmd) { continue }
         try {
             $args2 = @($c | Select-Object -Skip 1) + @('-c', 'import sys; print(sys.executable); print(sys.version_info[:2] >= (3, 11))')
-            $out = & $cmd.Source @args2 2>$null
+            $out = @(Natif { & $cmd.Source @args2 })
             if ($LASTEXITCODE -eq 0 -and $out[-1] -eq 'True') { return $out[0] }
         } catch { }
     }
@@ -147,7 +171,7 @@ function Trouver-Python {
 $python = Trouver-Python
 if (-not $python) {
     if ((Get-Command winget -ErrorAction SilentlyContinue) -and (Demander 'Python 3.11+ est introuvable. L''installer avec winget (Python 3.12) ?')) {
-        & winget install -e --id Python.Python.3.12 --scope user --accept-source-agreements --accept-package-agreements
+        Natif { & winget install -e --id Python.Python.3.12 --scope user --accept-source-agreements --accept-package-agreements } | Add-Content -LiteralPath $journal -Encoding UTF8
         $env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + [Environment]::GetEnvironmentVariable('Path', 'Machine')
         $python = Trouver-Python
     }
@@ -162,7 +186,7 @@ if (-not $SansOllama) {
     elseif (Test-Path "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe") { $ollama = "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" }
     if (-not $ollama) {
         if ((Get-Command winget -ErrorAction SilentlyContinue) -and (Demander 'Ollama (moteur des modeles de langage) est introuvable. L''installer avec winget ?')) {
-            & winget install -e --id Ollama.Ollama --accept-source-agreements --accept-package-agreements
+            Natif { & winget install -e --id Ollama.Ollama --accept-source-agreements --accept-package-agreements } | Add-Content -LiteralPath $journal -Encoding UTF8
             if (Test-Path "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe") { $ollama = "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" }
         }
         if (-not $ollama) { Ecrire 'Ollama absent : installez-le depuis https://ollama.com puis relancez l''installateur.' 'Yellow' }
@@ -175,10 +199,10 @@ Etape '4/7 Environnement Python et dependances'
 $venvPy = Join-Path $racine '.venv\Scripts\python.exe'
 if (-not (Test-Path $venvPy)) {
     Ecrire 'Creation de l''environnement Python (.venv)...'
-    & $python -m venv (Join-Path $racine '.venv')
+    Natif { & $python -m venv (Join-Path $racine '.venv') } | Add-Content -LiteralPath $journal -Encoding UTF8
     if ($LASTEXITCODE -ne 0) { Arreter 'creation de .venv impossible.' }
 }
-& $venvPy -m pip install --upgrade pip --quiet --disable-pip-version-check | Out-Null
+Natif { & $venvPy -m pip install --upgrade pip --quiet --disable-pip-version-check } | Add-Content -LiteralPath $journal -Encoding UTF8
 $listes = @('requirements\base.txt') + ($Modules | ForEach-Object { "requirements\$_.txt" })
 $toolshim = 'tools\toolshim\requirements.txt'
 if (Test-Path (Join-Path $racine $toolshim)) { $listes += $toolshim }
@@ -186,7 +210,7 @@ foreach ($liste in $listes) {
     $chemin = Join-Path $racine $liste
     if (-not (Test-Path $chemin)) { Ecrire "liste absente, ignoree : $liste" 'Yellow'; continue }
     Ecrire "Dependances : $liste (quelques minutes)..."
-    & $venvPy -m pip install -r $chemin --quiet --disable-pip-version-check 2>&1 | Add-Content -LiteralPath $journal -Encoding UTF8
+    Natif { & $venvPy -m pip install -r $chemin --quiet --disable-pip-version-check } | Add-Content -LiteralPath $journal -Encoding UTF8
     if ($LASTEXITCODE -ne 0) {
         if ($liste -eq 'requirements\base.txt') { Arreter "installation de $liste impossible." }
         Ecrire "Module ignore (installation impossible) : $liste. Voir le journal." 'Yellow'
@@ -237,7 +261,8 @@ if ($SansModeles -or -not $ollama) {
 } else {
     $env:LOCALAI_ROOT = $racine
     $env:LOCALAI_FORCE_TIER = $palier
-    $liste = & $venvPy -c "from backend.core.hardware import recommended_pulls; print('\n'.join(recommended_pulls('$palier')))" 2>$null
+    $liste = @(Natif { & $venvPy -c "from backend.core.hardware import recommended_pulls; print('\n'.join(recommended_pulls('$palier')))" } |
+        Where-Object { $_ -match '^[a-z0-9._-]+(:[A-Za-z0-9._-]+)?$' })
     if (-not $liste) { $liste = @('gemma3:4b', 'nomic-embed-text') }
     if ($DossierModeles) { $env:OLLAMA_MODELS = $DossierModeles }
     try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 'http://127.0.0.1:11434/api/version' | Out-Null }
@@ -245,7 +270,7 @@ if ($SansModeles -or -not $ollama) {
     foreach ($m in $liste) {
         if (-not $m) { continue }
         Ecrire "Telechargement de $m (peut etre long)..."
-        & $ollama pull $m 2>&1 | Select-Object -Last 1 | ForEach-Object { Ecrire "  $_" }
+        Natif { & $ollama pull $m } | Select-Object -Last 1 | ForEach-Object { Ecrire "  $_" }
     }
 }
 
@@ -276,3 +301,4 @@ if (-not $SansDemarrage) {
 Ecrire ''
 Ecrire 'Installation terminee. Lancez Neo avec le raccourci "Neo" ; l''interface s''ouvre dans votre navigateur.' 'Green'
 Ecrire "Reglages : $neoToml ; journal : $journal" 'Green'
+Pause-SiFenetre
