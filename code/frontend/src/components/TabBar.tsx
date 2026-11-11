@@ -1,4 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { calculerCapacites, type ModuleLourd } from "../lib/capacites";
 import type { SystemInfo } from "../lib/api";
 import { type Lang, t } from "../lib/i18n";
 import type { Vue } from "../lib/vues";
@@ -102,6 +103,7 @@ export default function TabBar({
   const texte = (cle: string) => t(lang, cle);
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
   const focusDemande = useRef<number | null>(null);
+  const griseRef = useRef<(id: Vue) => string>(() => "");
 
   // Alt+1..7 : acces direct a chaque onglet depuis n'importe ou.
   useEffect(() => {
@@ -111,6 +113,7 @@ export default function TabBar({
       const n = Number(e.code.slice(5));
       if (!Number.isInteger(n) || n < 1 || n > TABS.length) return;
       e.preventDefault();
+      if (griseRef.current(TABS[n - 1].id)) return;
       focusDemande.current = n - 1;
       onView(TABS[n - 1].id);
     };
@@ -140,6 +143,19 @@ export default function TabBar({
     onView(TABS[suite].id);
   };
 
+  // Onglets des modules lourds : grises quand la machine ne peut pas les faire tourner.
+  const capacites = calculerCapacites(systemInfo);
+  const moduleDe = (id: Vue): ModuleLourd | null =>
+    id === "video" ? "video" : id === "finetune" ? "finetune" : null;
+  const grise = (id: Vue) => {
+    const m = moduleDe(id);
+    return m && !capacites[m].ok ? capacites[m].raison : "";
+  };
+
+  useEffect(() => {
+    griseRef.current = grise;
+  });
+
   const gpu = systemInfo?.gpus?.[0];
   const ollamaOk = systemInfo?.ollama.available ?? false;
   const vramTxt = gpu
@@ -152,7 +168,6 @@ export default function TabBar({
   return (
     <header className="tabbar">
       <div className="tb-brand" title="Néo — assistant local">
-        <img src="/favicon.ico" alt="Neo" className="tb-logo-img" style={{ width: 32, height: 32, marginRight: 8, verticalAlign: "middle" }} />
         <span className="brand-dot" />
         <span className="tb-logo">NÉO</span>
       </div>
@@ -175,9 +190,12 @@ export default function TabBar({
             ref={(el) => {
               refs.current[i] = el;
             }}
-            className={`tb-tab ${view === tab.id ? "active" : ""}`}
-            title={`${texte(tab.cle)} — Alt+${i + 1}`}
-            onClick={() => onView(tab.id)}
+            className={`tb-tab ${view === tab.id ? "active" : ""} ${grise(tab.id) ? "tb-tab-grise" : ""}`}
+            aria-disabled={grise(tab.id) ? true : undefined}
+            title={grise(tab.id) || `${texte(tab.cle)} — Alt+${i + 1}`}
+            onClick={() => {
+              if (!grise(tab.id)) onView(tab.id);
+            }}
           >
             <Icone {...ICONES[tab.id]} />
             <span className="tb-tab-txt">{texte(tab.cle)}</span>

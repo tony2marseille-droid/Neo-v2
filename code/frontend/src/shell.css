@@ -567,3 +567,16 @@
     transition: none;
   }
 }
+
+/* Modules que la machine ne peut pas faire tourner (lib/capacites.ts) */
+.tb-tab.tb-tab-grise,
+.folder-card.folder-card-grise {
+  opacity: 0.38;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+.tb-tab.tb-tab-grise:hover,
+.folder-card.folder-card-grise:hover {
+  transform: none;
+  box-shadow: none;
+}

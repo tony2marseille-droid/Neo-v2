@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { ModelEntry, SystemInfo } from "../lib/api";
 import { getJSON, sendJSON } from "../lib/api";
+import { calculerCapacites, type ModuleLourd } from "../lib/capacites";
 import { type Lang, t } from "../lib/i18n";
 import { estVue, type Vue } from "../lib/vues";
 
@@ -49,7 +50,7 @@ const DOSSIERS: Dossier[] = [
     vue: "image",
     glyphe: "▣",
     titre: "Image 4K",
-    desc: "FLUX + Kontext : photorealisme fidele au sujet",
+    desc: "Studio 4K : brief, peinture, visages et yeux retravailles, verification",
   },
   {
     vue: "3d",
@@ -275,7 +276,17 @@ export default function HomeView({ onView, onNewChat, systemInfo, models, lang }
   const reglesActives = regles?.regles?.length ?? 0;
   const ok = (b: boolean | undefined) => (b ? "hud-dot ok" : "hud-dot bad");
 
+  // Cartes des modules lourds : grisees quand la machine ne peut pas les faire tourner.
+  const capacites = calculerCapacites(systemInfo);
+  const moduleCarte = (d: Dossier): ModuleLourd | null =>
+    d.vue === "image" ? "image" : d.vue === "video" ? "video" : d.vue === "finetune" ? "finetune" : null;
+  const raisonGrise = (d: Dossier) => {
+    const m = moduleCarte(d);
+    return m && !capacites[m].ok ? capacites[m].raison : "";
+  };
+
   const ouvre = (d: Dossier) => {
+    if (raisonGrise(d)) return;
     if (d.vue === "nouveau-chat") {
       // Vocal : ouvre le chat avec une demande prete (le client LAN fait le STT/TTS).
       onNewChat();
@@ -337,15 +348,16 @@ export default function HomeView({ onView, onNewChat, systemInfo, models, lang }
               <button
                 key={d.titre}
                 type="button"
-                className="folder-card"
+                className={`folder-card ${raisonGrise(d) ? "folder-card-grise" : ""}`}
                 style={{ "--i": i } as React.CSSProperties}
                 onClick={() => ouvre(d)}
-                title={d.desc}
+                title={raisonGrise(d) || d.desc}
+                aria-disabled={raisonGrise(d) ? true : undefined}
               >
                 <span className="fc-icon"><Vignette id={d.vue} /></span>
                 <span className="fc-title">{d.titre}</span>
                 <span className="fc-desc">{d.desc}</span>
-                <span className="fc-open">▸ ouvrir</span>
+                <span className="fc-open">{raisonGrise(d) ? "indisponible sur cette machine" : "▸ ouvrir"}</span>
               </button>
             ))}
           </div>

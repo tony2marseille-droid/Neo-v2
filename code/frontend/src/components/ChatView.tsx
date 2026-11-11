@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Avatar3D, { type Avatar3DHandle } from "./Avatar3D";
+// Agent visuel 3D (Avatar3D.tsx) : retire de la conversation tant qu'il n'est pas
+// au point. Le composant reste dans le depot ; pour le remettre, reimporter
+// Avatar3D et le placer dans l'en-tete (voir l'historique git).
+import type { Avatar3DHandle } from "./Avatar3D";
 import type {
   AgentDef,
   ChatStats,
@@ -874,7 +877,6 @@ export default function ChatView({
         {/* Le fond dynamique est monte globalement (SkinBackground). */}
       <div className="view-header">
         <h2>Conversation</h2>
-        <Avatar3D ref={avatarRef} size={96} />
         <select
           aria-label="Modèle de conversation"
           value={cloudModel ?? selectedModel}
