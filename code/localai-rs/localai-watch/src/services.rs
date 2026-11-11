@@ -575,8 +575,10 @@ mod tests {
 
     #[test]
     fn config_du_depot_valide() {
-        let chemin = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../config/services.json");
-        let defs = lire_config(&chemin).expect("config/services.json invalide");
+        // L'exemple versionne : `services.json` est propre a chaque machine
+        // et n'est pas dans le depot.
+        let chemin = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../config/services.exemple.json");
+        let defs = lire_config(&chemin).expect("config/services.exemple.json invalide");
         assert!(defs.iter().any(|d| d.nom == "serveur" && d.port == 8320 && d.actif));
         assert!(defs.iter().all(|d| d.sante.starts_with("http://127.0.0.1:")));
     }
