@@ -9,7 +9,7 @@
     Etapes :
       1. verification de Windows, de PowerShell et de l'espace disque ;
       2. detection du materiel (carte NVIDIA, memoire) et choix des modules ;
-      3. Python 3.11+ et Ollama (proposes via winget s'ils manquent) ;
+      3. Python 3.12+ et Ollama (proposes via winget s'ils manquent) ;
       4. environnement Python (.venv) et dependances des modules choisis ;
       5. reglages de la machine (neo.toml) et liste des services ;
       6. modeles adaptes au materiel (sauf -SansModeles) ;
@@ -38,6 +38,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Avec -File, « -Modules voix,trois_d » arrive en une seule chaine : on la decoupe.
+$Modules = @($Modules | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 $racine = $PSScriptRoot
 $journaux = Join-Path $racine 'logs'
 New-Item -ItemType Directory -Force -Path $journaux | Out-Null
@@ -151,17 +153,21 @@ if ($Modules.Count -eq 0) {
 }
 Ecrire "Palier de modeles : $palier ; modules : base, $($Modules -join ', ')"
 if ($vramGo -lt 8) {
-    Ecrire 'Sans carte NVIDIA de 8 Go, Neo fonctionne avec de petits modeles : la conversation sera plus lente, le studio image et la video ne seront pas proposes.' 'Yellow'
+    Ecrire 'Avec moins de 8 Go de memoire graphique NVIDIA, Neo utilise de petits modeles : la conversation sera plus lente, le studio image et la video ne seront pas proposes.' 'Yellow'
 }
 
 # ------------------------------------------------------- 3. Python et Ollama
 Etape '3/7 Python et Ollama'
 function Trouver-Python {
-    foreach ($c in @(@('py', '-3.12'), @('py', '-3.11'), @('py', '-3.13'), @('python'))) {
+    # Python 3.12+ obligatoire (versions des dependances). Installations officielles
+    # d'abord (lanceur py) ; si un candidat est l'environnement virtuel d'une autre
+    # application, on prend l'interpreteur de base dont il derive, jamais le venv.
+    $code = 'import sys,os; b=os.path.join(sys.base_prefix,''python.exe''); v=sys.prefix!=sys.base_prefix; print(b if v and os.path.exists(b) else sys.executable); print(sys.version_info[:2] >= (3, 12))'
+    foreach ($c in @(@('py', '-3.13'), @('py', '-3.12'), @('py', '-3.14'), @('python'), @('python3'))) {
         $cmd = Get-Command $c[0] -ErrorAction SilentlyContinue
         if (-not $cmd) { continue }
         try {
-            $args2 = @($c | Select-Object -Skip 1) + @('-c', 'import sys; print(sys.executable); print(sys.version_info[:2] >= (3, 11))')
+            $args2 = @($c | Select-Object -Skip 1) + @('-c', $code)
             $out = @(Natif { & $cmd.Source @args2 })
             if ($LASTEXITCODE -eq 0 -and $out[-1] -eq 'True') { return $out[0] }
         } catch { }
@@ -170,12 +176,12 @@ function Trouver-Python {
 }
 $python = Trouver-Python
 if (-not $python) {
-    if ((Get-Command winget -ErrorAction SilentlyContinue) -and (Demander 'Python 3.11+ est introuvable. L''installer avec winget (Python 3.12) ?')) {
+    if ((Get-Command winget -ErrorAction SilentlyContinue) -and (Demander 'Python 3.12 ou plus recent est introuvable. L''installer avec winget (Python 3.12) ?')) {
         Natif { & winget install -e --id Python.Python.3.12 --scope user --accept-source-agreements --accept-package-agreements } | Add-Content -LiteralPath $journal -Encoding UTF8
         $env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + [Environment]::GetEnvironmentVariable('Path', 'Machine')
         $python = Trouver-Python
     }
-    if (-not $python) { Arreter 'Python 3.11 ou plus recent est necessaire : https://www.python.org/downloads/ puis relancez l''installateur.' }
+    if (-not $python) { Arreter 'Python 3.12 ou plus recent est necessaire : https://www.python.org/downloads/ puis relancez l''installateur.' }
 }
 Ecrire "Python : $python"
 

@@ -8,7 +8,7 @@
 |---|---|---|
 | [Ollama](https://ollama.com) | ≥ 0.4 | inférence LLM |
 | Rust (rustup) | ≥ 1.89 | build serveur |
-| Python | 3.11+ | kernels/outils |
+| Python | 3.12+ | kernels/outils |
 | Node.js | ≥ 20 | build frontend |
 | Git | — | sources |
 

@@ -59,8 +59,11 @@ jobs:
         shell: pwsh
         run: |
           $d = "dist/Neo-$env:VERSION"
-          powershell -NoProfile -ExecutionPolicy Bypass -File "$d/installer.ps1" -Oui -SansModeles -SansOllama -SansRaccourcis -SansDemarrage -Modules dev
+          powershell -NoProfile -ExecutionPolicy Bypass -File "$d/installer.ps1" -Oui -SansModeles -SansOllama -SansRaccourcis -SansDemarrage -Modules voix,trois_d,rerank,dev
           if ($LASTEXITCODE -ne 0) { Get-Content "$d/logs/installation.log" -Tail 60; exit 1 }
+          # Chaque module demande doit s'etre installe (un echec de module n'arrete pas l'installateur).
+          $ignores = Select-String -Path "$d/logs/installation.log" -Pattern 'Module ignore'
+          if ($ignores) { $ignores | ForEach-Object { $_.Line }; Get-Content "$d/logs/installation.log" -Tail 80; exit 1 }
 
       - name: Demarrage et controles
         shell: pwsh
