@@ -1,16 +1,11 @@
 {
-  "_doc": "EXEMPLE a copier en services.json (non versionne) et a adapter a la machine. Services permanents de Neo, lances et surveilles par localai-watch (superviseur unique). Relu a chaud a chaque modification. Champs : nom, libelle, commande, args, dossier, env, port, sante (URL qui doit repondre 2xx), journal (fichier sous logs/), delai_demarrage_s (temps accorde au demarrage), echecs_avant_arret (controles KO consecutifs, port ouvert, avant de tuer un service bloque), delai_initial_s (attente apres le demarrage du superviseur avant un premier lancement), actif.",
+  "_doc": "GABARIT de config/services.json (ce fichier-la est propre a chaque machine et n'est pas versionne ; l'installateur le cree a partir de celui-ci). Services permanents de Neo, lances et surveilles par localai-watch (superviseur unique), relu a chaud. Espaces reserves remplaces a la lecture : {racine} (dossier d'installation), {python} (Python de Neo, neo.toml outils.python), {bin} (dossier des executables de Neo), {ollama} (executable d'Ollama, neo.toml ollama.executable), {comfyui} (dossier de ComfyUI, variable NEO_COMFYUI_DIR). Champs : nom, libelle, commande, args, dossier, env, port, sante (URL qui doit repondre 2xx), journal (fichier sous logs/), delai_demarrage_s (temps accorde au demarrage), echecs_avant_arret (controles KO consecutifs, port ouvert, avant de tuer un service bloque), delai_initial_s (attente apres le demarrage du superviseur avant un premier lancement), actif.",
   "services": [
     {
       "nom": "ollama",
       "libelle": "Ollama (LLM)",
-      "commande": "ollama",
-      "args": [
-        "serve"
-      ],
-      "env": {
-        "OLLAMA_MODELS": "E:\\LocalAI-Modeles"
-      },
+      "commande": "{ollama}",
+      "args": ["serve"],
       "port": 11434,
       "sante": "http://127.0.0.1:11434/api/version",
       "journal": "ollama_superviseur.log",
@@ -20,14 +15,9 @@
     {
       "nom": "toolshim",
       "libelle": "Proxy d'outils (toolshim)",
-      "commande": "E:\\ia\\.venv\\Scripts\\python.exe",
-      "args": [
-        "-m",
-        "toolshim",
-        "--config",
-        "config.json"
-      ],
-      "dossier": "E:\\ia\\tools\\toolshim",
+      "commande": "{python}",
+      "args": ["-m", "toolshim", "--config", "config.json"],
+      "dossier": "{racine}\\tools\\toolshim",
       "port": 8330,
       "sante": "http://127.0.0.1:8330/health",
       "journal": "toolshim.log"
@@ -35,12 +25,9 @@
     {
       "nom": "rerank",
       "libelle": "Reranking (RAG)",
-      "commande": "E:\\ia\\.venv\\Scripts\\python.exe",
-      "args": [
-        "-u",
-        "E:\\ia\\rerank_server.py"
-      ],
-      "dossier": "E:\\ia",
+      "commande": "{python}",
+      "args": ["-u", "{racine}\\rerank_server.py"],
+      "dossier": "{racine}",
       "port": 8322,
       "sante": "http://127.0.0.1:8322/",
       "journal": "rerank.log",
@@ -49,12 +36,9 @@
     {
       "nom": "video",
       "libelle": "API video",
-      "commande": "E:\\ia\\.venv\\Scripts\\python.exe",
-      "args": [
-        "-u",
-        "E:\\ia\\serve_video.py"
-      ],
-      "dossier": "E:\\ia",
+      "commande": "{python}",
+      "args": ["-u", "{racine}\\serve_video.py"],
+      "dossier": "{racine}",
       "port": 8321,
       "sante": "http://127.0.0.1:8321/api/video/liste",
       "journal": "serve_video.log"
@@ -62,11 +46,10 @@
     {
       "nom": "serveur",
       "libelle": "Serveur Neo",
-      "commande": "E:\\localai-rs\\target\\release\\localai-server.exe",
-      "dossier": "E:\\localai-rs",
+      "commande": "{bin}\\localai-server.exe",
+      "dossier": "{bin}",
       "env": {
-        "LOCALAI_PORT": "8320",
-        "LOCALAI_ROOT": "E:\\ia",
+        "LOCALAI_ROOT": "{racine}",
         "OLLAMA_URL": "http://127.0.0.1:8330"
       },
       "port": 8320,
@@ -76,15 +59,9 @@
     {
       "nom": "comfyui",
       "libelle": "ComfyUI",
-      "commande": "E:\\ComfyUI\\.venv\\Scripts\\python.exe",
-      "args": [
-        "E:\\ComfyUI\\main.py",
-        "--port",
-        "8188",
-        "--listen",
-        "127.0.0.1"
-      ],
-      "dossier": "E:\\ComfyUI",
+      "commande": "{comfyui}\\.venv\\Scripts\\python.exe",
+      "args": ["{comfyui}\\main.py", "--port", "8188", "--listen", "127.0.0.1"],
+      "dossier": "{comfyui}",
       "port": 8188,
       "sante": "http://127.0.0.1:8188/",
       "journal": "comfyui.log",

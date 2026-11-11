@@ -72,12 +72,49 @@ struct Fichier {
     services: Vec<Definition>,
 }
 
+/// Valeurs des espaces reserves d'un gabarit de services :
+/// `{racine}` (installation), `{python}` (Python de Neo), `{bin}` (dossier
+/// des executables, celui du superviseur), `{ollama}` (executable d'Ollama),
+/// `{comfyui}` (dossier de ComfyUI). Tout vient de neo.toml ou d'un defaut
+/// relatif a la racine : aucun chemin de machine dans le gabarit.
+pub fn espaces_reserves() -> Vec<(&'static str, String)> {
+    let racine = localai_core::config::default_root();
+    let env_ou = |nom: &str, defaut: std::path::PathBuf| {
+        std::env::var(nom).ok().filter(|v| !v.trim().is_empty()).unwrap_or_else(|| defaut.to_string_lossy().into_owned())
+    };
+    let bin = std::env::current_exe()
+        .ok()
+        .and_then(|e| e.parent().map(Path::to_path_buf))
+        .unwrap_or_else(|| racine.join("bin"));
+    vec![
+        ("{racine}", racine.to_string_lossy().into_owned()),
+        ("{python}", env_ou("NEO_PYTHON", racine.join(".venv").join("Scripts").join("python.exe"))),
+        ("{bin}", bin.to_string_lossy().into_owned()),
+        ("{ollama}", env_ou("OLLAMA_BIN", "ollama".into())),
+        ("{comfyui}", env_ou("NEO_COMFYUI_DIR", racine.join("tools").join("ComfyUI"))),
+    ]
+}
+
+/// Remplace les espaces reserves dans tous les champs textuels (pur, teste).
+pub fn developper(defs: &mut [Definition], valeurs: &[(&str, String)]) {
+    let rempl = |s: &str| valeurs.iter().fold(s.to_string(), |acc, (motif, v)| acc.replace(motif, v));
+    for d in defs.iter_mut() {
+        d.commande = rempl(&d.commande);
+        d.args = d.args.iter().map(|a| rempl(a)).collect();
+        d.dossier = d.dossier.as_deref().map(rempl);
+        for v in d.env.values_mut() {
+            *v = rempl(v);
+        }
+    }
+}
+
 /// Lit et valide la configuration (noms et ports uniques).
 pub fn lire_config(chemin: &Path) -> Result<Vec<Definition>, String> {
     let texte = std::fs::read_to_string(chemin).map_err(|e| format!("{}: {e}", chemin.display()))?;
     // BOM toleree : le Bloc-notes et PowerShell 5.1 en ajoutent un en UTF-8.
-    let f: Fichier = serde_json::from_str(texte.trim_start_matches('\u{feff}'))
+    let mut f: Fichier = serde_json::from_str(texte.trim_start_matches('\u{feff}'))
         .map_err(|e| format!("{}: {e}", chemin.display()))?;
+    developper(&mut f.services, &espaces_reserves());
     let mut noms = std::collections::HashSet::new();
     let mut ports = std::collections::HashSet::new();
     for d in &f.services {
@@ -581,19 +618,34 @@ mod tests {
         let defs = lire_config(&chemin).expect("config/services.exemple.json invalide");
         assert!(defs.iter().any(|d| d.nom == "serveur" && d.port == 8320 && d.actif));
         assert!(defs.iter().all(|d| d.sante.starts_with("http://127.0.0.1:")));
+        // Gabarit : plus aucun espace reserve apres lecture.
+        assert!(defs.iter().all(|d| !d.commande.contains('{') && d.args.iter().all(|a| !a.contains("{racine}"))));
+    }
+
+    #[test]
+    fn espaces_reserves_developpes() {
+        let mut defs: Vec<Definition> = vec![serde_json::from_str(
+            r#"{"nom":"s","commande":"{python}","args":["-u","{racine}/s.py"],"dossier":"{racine}","env":{"R":"{racine}"},"port":1,"sante":"http://127.0.0.1:1/"}"#,
+        )
+        .unwrap()];
+        developper(&mut defs, &[("{racine}", "D:/Neo".into()), ("{python}", "D:/Neo/py.exe".into())]);
+        assert_eq!(defs[0].commande, "D:/Neo/py.exe");
+        assert_eq!(defs[0].args, vec!["-u", "D:/Neo/s.py"]);
+        assert_eq!(defs[0].dossier.as_deref(), Some("D:/Neo"));
+        assert_eq!(defs[0].env["R"], "D:/Neo");
     }
 
     #[test]
     fn motif_de_ligne_de_commande() {
         let mut d: Definition = serde_json::from_str(
-            r#"{"nom":"r","commande":"E:\\ia\\.venv\\Scripts\\python.exe","args":["-u","E:\\ia\\rerank_server.py"],"port":1,"sante":"http://127.0.0.1:1/"}"#,
+            r#"{"nom":"r","commande":"D:\\Neo\\.venv\\Scripts\\python.exe","args":["-u","D:\\Neo\\rerank_server.py"],"port":1,"sante":"http://127.0.0.1:1/"}"#,
         )
         .unwrap();
-        assert_eq!(motif_commande(&d), r"-u e:\ia\rerank_server.py");
+        assert_eq!(motif_commande(&d), r"-u d:\neo\rerank_server.py");
         d.args = vec!["main.py".into(), "C:\\Mes Documents\\x".into()];
         assert_eq!(motif_commande(&d), "main.py \"c:\\mes documents\\x\"");
         d.args.clear();
-        assert_eq!(motif_commande(&d), r"e:\ia\.venv\scripts\python.exe");
+        assert_eq!(motif_commande(&d), r"d:\neo\.venv\scripts\python.exe");
     }
 
     #[test]

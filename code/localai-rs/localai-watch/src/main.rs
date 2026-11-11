@@ -26,7 +26,7 @@ const ENTRAINEMENT_FIGE: Duration = Duration::from_secs(20 * 60);
 const DELAI_COMMANDE: Duration = Duration::from_secs(30);
 
 fn root() -> String {
-    std::env::var("LOCALAI_ROOT").unwrap_or_else(|_| r"E:\ia".into())
+    localai_core::config::default_root().to_string_lossy().into_owned()
 }
 
 fn log(msg: &str) {
@@ -66,8 +66,19 @@ async fn alerter(client: &reqwest::Client, db_path: &Path, message: &str) {
         .await;
 }
 
+/// Lettre du disque qui porte l'installation (`C` a defaut).
+fn lecteur() -> char {
+    let r = root();
+    let mut c = r.chars();
+    match (c.next(), c.next()) {
+        (Some(l), Some(':')) if l.is_ascii_alphabetic() => l.to_ascii_uppercase(),
+        _ => 'C',
+    }
+}
+
 async fn disk_gb() -> Option<f64> {
-    sortie("powershell", &["-NoProfile", "-Command", "[math]::Round((Get-PSDrive E).Free/1GB,1)"])
+    let commande = format!("[math]::Round((Get-PSDrive {}).Free/1GB,1)", lecteur());
+    sortie("powershell", &["-NoProfile", "-Command", &commande])
         .await?
         .parse()
         .ok()
@@ -166,7 +177,7 @@ impl Alertes {
 async fn controles_machine(client: &reqwest::Client, db_path: &Path, logs: &Path, etat: &mut Alertes) {
     if let Some(libre) = disk_gb().await {
         if etat.passe_en_defaut("disque", libre < DISK_MIN_GB) {
-            alerter(client, db_path, &format!("disque E: {libre} Go libres (< {DISK_MIN_GB})")).await;
+            alerter(client, db_path, &format!("disque {}: {libre} Go libres (< {DISK_MIN_GB})", lecteur())).await;
         }
     }
     let smart = disk_health().await;

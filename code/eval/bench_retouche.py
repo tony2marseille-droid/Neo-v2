@@ -22,10 +22,13 @@ from PIL import Image
 
 ICI = Path(__file__).resolve().parent
 sys.path.insert(0, str(ICI.parent))
-SD = Path(r"E:\ia\tools\sd\bin\sd-cli.exe")
-KLEIN = Path(r"I:\Neo-Archive-2026\tools\sd\models_edit\flux-2-klein-4b-Q8_0.gguf")
-KLEIN_VAE = Path(r"I:\Neo-Archive-2026\tools\sd\models_edit\flux2-vae.safetensors")
-QWEN3_4B = Path(r"E:\ia\tools\sd_ssd\models\Qwen3-4B-Instruct-2507-Q8_0.gguf")
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from backend.core import reglages  # noqa: E402
+SD = reglages.chemin("LOCALAI_SD_DIR", "tools", "sd") / "bin" / "sd-cli.exe"
+KLEIN = reglages.chemin("NEO_SD_RETOUCHE", "tools", "sd", "models_edit") / "flux-2-klein-4b-Q8_0.gguf"
+KLEIN_VAE = reglages.chemin("NEO_SD_RETOUCHE", "tools", "sd", "models_edit") / "flux2-vae.safetensors"
+QWEN3_4B = reglages.chemin("NEO_QWEN3_4B_DIR", "tools", "sd_ssd", "models") / "Qwen3-4B-Instruct-2507-Q8_0.gguf"
 OLLAMA = "http://127.0.0.1:11434"
 
 RETOUCHES = [

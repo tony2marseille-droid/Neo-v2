@@ -57,7 +57,7 @@ impl Worker {
             .open(logs.join("worker_python.log"))
             .map(Stdio::from)
             .unwrap_or_else(|_| Stdio::null());
-        // PYTHONPATH : `python backend/worker.py` place E:\ia\backend en
+        // PYTHONPATH : `python backend/worker.py` place <racine>\backend en
         // sys.path[0] ; sans la racine, `import backend.*` echoue en silence.
         // `-X utf8` AVANT le script (apres, il serait passe en argv au script).
         let mut child = localai_core::processus::commande(&py)

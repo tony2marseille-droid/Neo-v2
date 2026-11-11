@@ -1,8 +1,8 @@
 # taches_silencieuses.ps1 - les taches planifiees de Neo tournent sans aucune fenetre.
 #
 # Usage (console PowerShell ADMINISTRATEUR : certaines taches appartiennent a SYSTEM) :
-#   powershell -ExecutionPolicy Bypass -File E:\neo-repo\code\scripts\taches_silencieuses.ps1            # simulation
-#   powershell -ExecutionPolicy Bypass -File E:\neo-repo\code\scripts\taches_silencieuses.ps1 -Executer  # application
+#   powershell -ExecutionPolicy Bypass -File <depot>\code\scripts\taches_silencieuses.ps1            # simulation
+#   powershell -ExecutionPolicy Bypass -File <depot>\code\scripts\taches_silencieuses.ps1 -Executer  # application
 #
 # Probleme : les taches « LocalAI_* » et « Neo_* » lancent powershell.exe, des .bat
 # ou python.exe dans la session ouverte : une console s'affiche (toutes les 2 min
@@ -15,9 +15,17 @@
 param([switch]$Executer)
 
 $ErrorActionPreference = 'Stop'
-$source = 'E:\neo-repo\code\localai-rs\target\release\neo-silencieux.exe'
-$lanceur = 'E:\ia\tools\neo-silencieux.exe'
-$sauvegarde = "E:\ia\_sauvegardes\taches_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+# Reglages : neo.toml (NeoConfig.psm1), sinon LOCALAI_ROOT, sinon le dossier parent du script.
+$racine = Split-Path -Parent $PSScriptRoot
+$module = Join-Path $PSScriptRoot 'NeoConfig.psm1'
+if (Test-Path $module) {
+    Import-Module $module -Force
+    $racine = Import-NeoConfig -Depart $racine
+} elseif ($env:LOCALAI_ROOT) { $racine = $env:LOCALAI_ROOT }
+# neo-silencieux.exe fraichement compile : NEO_SILENCIEUX_SOURCE, sinon <racine>\bin.
+$source = if ($env:NEO_SILENCIEUX_SOURCE) { $env:NEO_SILENCIEUX_SOURCE } else { Join-Path $racine 'bin\neo-silencieux.exe' }
+$lanceur = Join-Path $racine 'tools\neo-silencieux.exe'
+$sauvegarde = "$racine\_sauvegardes\taches_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
 
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if ($Executer -and -not $admin) { throw 'console administrateur requise (taches SYSTEM).' }

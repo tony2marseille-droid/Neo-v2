@@ -125,8 +125,16 @@ async fn status(State(_st): State<Arc<crate::AppState>>) -> ApiResult<Json<Value
 }
 
 fn which_ffmpeg() -> Value {
-    for p in ["E:\\ia\\tools\\ffmpeg\\bin\\ffmpeg.exe", "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"] {
-        if std::path::Path::new(p).is_file() { return json!(p); }
+    // Ordre : reglage (neo.toml / NEO_FFMPEG), copie fournie avec Neo,
+    // installation Chocolatey, puis le PATH.
+    let racine = localai_core::config::default_root();
+    let candidats = [
+        std::env::var("NEO_FFMPEG").ok().map(std::path::PathBuf::from),
+        Some(racine.join("tools").join("ffmpeg").join("bin").join("ffmpeg.exe")),
+        Some(std::path::PathBuf::from(r"C:\ProgramData\chocolatey\bin\ffmpeg.exe")),
+    ];
+    for p in candidats.into_iter().flatten() {
+        if p.is_file() { return json!(p.to_string_lossy()); }
     }
     if let Ok(paths) = std::env::var("PATH") {
         for dir in std::env::split_paths(&paths) {

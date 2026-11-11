@@ -157,7 +157,7 @@ fn extraire_json(txt: &str) -> Option<serde_json::Value> {
 }
 
 /// Extraction de faits d'une conversation (script `extract_facts.py`) en
-/// tache de fond : venv et racine configures (plus de chemins `E:\ia` en
+/// tache de fond : venv et racine configures (plus de chemins de machine en
 /// dur), UTF-8, delai borne, erreurs journalisees au lieu d'etre avalees.
 pub fn extraire_faits_en_fond(root: &Path, conversation_id: i64) {
     let root = root.to_path_buf();

@@ -18,6 +18,7 @@ import re
 import shutil
 import time
 from pathlib import Path
+from backend.core import reglages
 
 SERVEUR_OLLAMA = os.environ.get("LOCALAI_OLLAMA_URL", "http://127.0.0.1:11434")
 # Modele de code : choisi dynamiquement parmi les modeles REELLEMENT installes
@@ -410,7 +411,7 @@ def pipeline_3d(request_text: str, save_dir: str = "", printer: str = "",
     perms = PermissionManager("POWER")
     if not save_dir:
         save_dir = str(
-            Path(os.environ.get("LOCALAI_ROOT", r"E:\ia")) /
+            reglages.racine() /
             "workspace" / "pipeline_3d" / time.strftime("%Y%m%d_%H%M%S")
         )
     dossier = Path(save_dir)

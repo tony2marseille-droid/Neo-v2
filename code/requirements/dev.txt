@@ -1,0 +1,4 @@
+# Developpement : tests et analyse.
+# Versions de l environnement de reference (voir ../requirements.txt).
+pytest-cov==7.1.0
+ruff==0.17.4

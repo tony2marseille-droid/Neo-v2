@@ -28,19 +28,19 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Chemins par défaut (identiques à la pipeline v6 en production)
 # ---------------------------------------------------------------------------
-ROOT = Path(os.environ.get("LOCALAI_ROOT", "E:/ia"))
+ROOT = Path(os.environ.get("LOCALAI_ROOT") or Path(__file__).resolve().parent)
 ATELIER = ROOT / "data" / "lora_atelier"
 VENV = ROOT / ".venv" / "Scripts" / "python.exe"
 LOGS = ROOT / "logs"
-HF_HOME = os.environ.get("HF_HOME", "E:/huggingface_cache")
+HF_HOME = os.environ.get("HF_HOME", "")  # vide = cache par defaut de Hugging Face
 OLLAMA_URL = "http://127.0.0.1:11434"
 
 # Outils conversion / quantification
 CONVERT_HF = os.environ.get(
-    "CONVERT_HF", "E:/ia/llama-cpp-src/convert_hf_to_gguf.py"
+    "CONVERT_HF", str(ROOT / "llama-cpp-src" / "convert_hf_to_gguf.py")
 )
 QUANTIZE_EXE = os.environ.get(
-    "QUANTIZE_EXE", "E:/ia/llamacpp/llama-quantize.exe"
+    "QUANTIZE_EXE", str(ROOT / "llamacpp" / "llama-quantize.exe")
 )
 
 # Base modèle

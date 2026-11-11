@@ -10,10 +10,11 @@ import json
 from pathlib import Path
 
 import cv2
+from backend.core import reglages
 
 # Emplacements connus du modele YuNet (232 Ko, OpenCV Zoo).
 _MODELES = (
-    Path(r"E:\ia\models\face_detection_yunet_2023mar.onnx"),
+    reglages.chemin("NEO_YUNET", "models", "face_detection_yunet_2023mar.onnx"),
     Path(__file__).resolve().parents[2] / "models" / "face_detection_yunet_2023mar.onnx",
 )
 
@@ -93,4 +94,4 @@ def tool_detect_faces(image_path: str, save_path: str = "") -> str:
 if __name__ == "__main__":
     import sys
 
-    print(tool_detect_faces(sys.argv[1] if len(sys.argv) > 1 else r"E:\ia\data\lena.jpg"))
+    print(tool_detect_faces(sys.argv[1]) if len(sys.argv) > 1 else "usage : python t_visage.py <image>")

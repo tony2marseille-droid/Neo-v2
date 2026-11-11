@@ -1,8 +1,8 @@
 # priorite_taches.ps1 - les services de Neo et Ollama tournent en priorite NORMALE.
 #
 # Usage (console PowerShell ADMINISTRATEUR : une tache appartient a SYSTEM) :
-#   powershell -ExecutionPolicy Bypass -File E:\neo-repo\code\scripts\priorite_taches.ps1            # simulation
-#   powershell -ExecutionPolicy Bypass -File E:\neo-repo\code\scripts\priorite_taches.ps1 -Executer  # application
+#   powershell -ExecutionPolicy Bypass -File <depot>\code\scripts\priorite_taches.ps1            # simulation
+#   powershell -ExecutionPolicy Bypass -File <depot>\code\scripts\priorite_taches.ps1 -Executer  # application
 #
 # Probleme : une tache planifiee recoit par defaut la priorite 7. Windows lance
 # alors le programme, et tout ce qu'il lance a son tour, en classe « inferieure
@@ -27,7 +27,14 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$sauvegarde = "E:\ia\_sauvegardes\taches_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+# Reglages : neo.toml (NeoConfig.psm1), sinon LOCALAI_ROOT, sinon le dossier parent du script.
+$racine = Split-Path -Parent $PSScriptRoot
+$module = Join-Path $PSScriptRoot 'NeoConfig.psm1'
+if (Test-Path $module) {
+    Import-Module $module -Force
+    $racine = Import-NeoConfig -Depart $racine
+} elseif ($env:LOCALAI_ROOT) { $racine = $env:LOCALAI_ROOT }
+$sauvegarde = "$racine\_sauvegardes\taches_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if ($Executer -and -not $admin) { throw 'console administrateur requise (tache SYSTEM).' }
 if ($Executer) { New-Item -ItemType Directory -Force -Path $sauvegarde | Out-Null }

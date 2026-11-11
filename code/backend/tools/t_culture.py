@@ -8,8 +8,9 @@ d'apprentissage (audit-generation-3d.md §8).
 import json
 import os
 from pathlib import Path
+from backend.core import reglages
 
-_RACINE = os.environ.get("LOCALAI_ROOT", r"E:\ia")
+_RACINE = str(reglages.racine())
 _FICHIER_OBJETS = Path(_RACINE) / "data" / "culture_objets.json"
 
 # Base de depart : objets courants, dimensions typiques en mm.

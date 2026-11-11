@@ -1,6 +1,14 @@
 $ErrorActionPreference = 'SilentlyContinue'
-$log = 'E:\ia\logs\garde_prod.log'
-$etat = 'E:\ia\logs\garde_prod_etat.json'
+# Reglages : neo.toml (scripts\NeoConfig.psm1), sinon LOCALAI_ROOT, sinon le dossier du script.
+$racine = $PSScriptRoot
+$module = Join-Path $PSScriptRoot 'scripts\NeoConfig.psm1'
+if (Test-Path $module) {
+    Import-Module $module -Force
+    $racine = Import-NeoConfig -Depart $racine
+} elseif ($env:LOCALAI_ROOT) { $racine = $env:LOCALAI_ROOT }
+$journaux = Join-Path $racine 'logs'
+$log = "$journaux\garde_prod.log"
+$etat = "$journaux\garde_prod_etat.json"
 
 function Log([string]$m) {
     $l = "{0} garde_prod: {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $m
@@ -28,7 +36,7 @@ if (-not $sante.neo) {
 # 2. Ollama (11434) : relance via le script de boot officiel
 if (-not $sante.ollama) {
     Log 'ollama KO -> relance run_ollama.ps1'
-    Start-Process -FilePath 'powershell' -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','E:\ia\run_ollama.ps1' -WindowStyle Hidden
+    Start-Process -FilePath 'powershell' -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + "$racine\run_ollama.ps1" + '"') -WindowStyle Hidden
     Start-Sleep -Seconds 15
     if (OK 'http://127.0.0.1:11434/api/version') { Log 'ollama retabli'; $sante.ollama = $true }
     else { Log 'ollama toujours KO apres relance' }
@@ -42,7 +50,7 @@ if (-not $sante.rerank) {
 }
 
 # 4. Entrainements : alerter si un statut 'training' ne bouge plus (>20 min)
-foreach ($st in (Get-ChildItem 'E:\ia\logs\train_v*_status.json' | Sort-Object LastWriteTime -Descending)) {
+foreach ($st in (Get-ChildItem "$journaux\train_v*_status.json" | Sort-Object LastWriteTime -Descending)) {
     try {
         $j = Get-Content $st.FullName -Raw | ConvertFrom-Json
         if ($j.phase -eq 'training') {

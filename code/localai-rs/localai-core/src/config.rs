@@ -11,24 +11,21 @@ fn env_path(key: &str, default: PathBuf) -> PathBuf {
     std::env::var(key).map(PathBuf::from).unwrap_or(default)
 }
 
-/// Racine du projet : LOCALAI_ROOT, sinon le dossier du binaire (Rust),
-/// sinon E:\ia par defaut sur ce poste.
+/// Racine d'installation : `LOCALAI_ROOT` (eventuellement fournie par
+/// `neo.toml`, voir `neoconf`), sinon le dossier qui contient `neo.toml`,
+/// sinon le dossier de l'executable. Aucun chemin de machine en dur.
 pub fn default_root() -> PathBuf {
+    let fichier = crate::neoconf::appliquer();
     if let Ok(r) = std::env::var("LOCALAI_ROOT") {
         return PathBuf::from(r);
     }
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(parent) = exe.parent() {
-            // Si le binaire est dans E:\localai-rs\target\..., remonter n'aide pas.
-            // On prefere E:\ia si ce dossier existe.
-            let candidate = PathBuf::from(r"E:\ia");
-            if candidate.is_dir() {
-                return candidate;
-            }
-            return parent.to_path_buf();
-        }
+    if let Some(dossier) = fichier.as_deref().and_then(std::path::Path::parent) {
+        return dossier.to_path_buf();
     }
-    PathBuf::from(r"E:\ia")
+    std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf))
+        .unwrap_or_else(|| PathBuf::from("."))
 }
 
 #[derive(Debug, Clone)]
@@ -49,9 +46,9 @@ impl Settings {
             .and_then(|v| v.parse().ok())
             .unwrap_or(8320);
         Self {
-            // Note securite : 0.0.0.0 expose sur le LAN (acces distant necessaire).
-            // Pas d'auth : ne jamais exposer au WAN. LOCALAI_HOST=127.0.0.1 pour restreindre.
-            host: env_str("LOCALAI_HOST", "0.0.0.0"),
+            // Securite : ecoute locale par defaut. L'acces depuis le reseau local
+            // se choisit explicitement (neo.toml : [reseau] hote = "0.0.0.0").
+            host: env_str("LOCALAI_HOST", "127.0.0.1"),
             port,
             ollama_host: env_str("OLLAMA_URL", "http://127.0.0.1:11434"),
             data_dir: env_path("LOCALAI_DATA", root.join("data")),

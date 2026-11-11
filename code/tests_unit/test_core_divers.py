@@ -98,7 +98,7 @@ def test_texte_lu_a_voix_haute_sans_markdown():
     from backend.tts.engine import nettoyer_pour_voix
 
     texte = ("## Résultat\n**Bravo**, voici `x = 1` et [la doc](https://exemple.fr/doc).\n"
-             "```python\nprint('hi')\n```\nImage : E:\ia\workspace\images\chat.jpg\n- point un")
+             "```python\nprint('hi')\n```\nImage : D:\projets\workspace\images\chat.jpg\n- point un")
     lu = nettoyer_pour_voix(texte)
     assert "#" not in lu and "*" not in lu and "`" not in lu and "https" not in lu
     assert "Bravo" in lu and "x = 1" in lu and "la doc" in lu and "point un" in lu

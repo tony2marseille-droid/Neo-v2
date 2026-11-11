@@ -6,11 +6,12 @@ from pathlib import Path
 
 from backend.core.security import verifier_acces as _verifier_acces
 from backend.tools.common import _find_exe
+from backend.core import reglages
 
 
 _BLENDER_PATHS = [
     os.environ.get("LOCALAI_BLENDER", ""),
-    os.environ.get("LOCALAI_ROOT", r"E:\ia") + r"\tools\Blender\blender.exe",
+    str(reglages.racine() / "tools" / "Blender" / "blender.exe"),
     r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe",
     r"C:\Program Files\Blender Foundation\Blender\blender.exe",
 ]
@@ -131,7 +132,7 @@ def tool_blender_run(script_path: str, timeout_s: int = 600) -> str:
     blender = _find_blender()
     if not blender:
         return (
-            "Blender introuvable (E:\\ia\\tools\\Blender\\blender.exe). "
+            "Blender introuvable (<racine>\\tools\\Blender\\blender.exe ou reglage outils.blender de neo.toml). "
             "Ou definissez LOCALAI_BLENDER vers blender.exe."
         )
     try:

@@ -3,7 +3,7 @@
 //! Ordre de resolution du commit :
 //! 1. `NEO_GIT_COMMIT` (injecte par le script de deploiement) ;
 //! 2. fichier `COMMIT` a la racine du workspace (pose lors de la synchro
-//!    depuis le miroir git, car `E:\localai-rs` n'est pas un depot) ;
+//!    depuis le miroir git, car l'espace de travail de production n'est pas un depot) ;
 //! 3. `git rev-parse` si le workspace est versionne ;
 //! 4. `inconnu`.
 //!

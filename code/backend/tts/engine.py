@@ -3,7 +3,7 @@ r"""Synthese vocale de Neo.
 Deux moteurs :
 - Piper (voix neuronales ONNX, processeur seulement : ne prend rien au GPU de
   FLUX) quand un modele est installe dans le dossier des voix (NEO_VOIX_DIR,
-  defaut E:\ia\tools\voix) ; identifiants « piper:<nom> » ;
+  defaut <racine>\tools\voix) ; identifiants « piper:<nom> » ;
 - SAPI (pyttsx3) sinon.
 La voix de Neo par defaut est la premiere voix Piper installee.
 Le texte est nettoye avant lecture : le Markdown, les blocs de code, les
@@ -18,8 +18,9 @@ import wave
 from pathlib import Path
 
 import pyttsx3
+from backend.core import reglages
 
-DOSSIER_VOIX = Path(os.environ.get("NEO_VOIX_DIR", r"E:\ia\tools\voix"))
+DOSSIER_VOIX = reglages.chemin("NEO_VOIX_DIR", "tools", "voix")
 
 
 class TTSEngineError(Exception):

@@ -7,7 +7,7 @@ Mesures par image :
 - note d'un modele de vision local (qwen2.5vl) : detail, realisme, absence
   d'artefacts, sur 10 ; il ne sait pas quelle version il juge.
 
-Usage : E:\\ia\\.venv\\Scripts\\python.exe -I code/eval/bench_image.py <etiquette> [--code <dossier code>] [--sortie <dossier>]
+Usage : <python de Neo> -I code/eval/bench_image.py <etiquette> [--code <dossier code>] [--sortie <dossier>]
 Le pipeline teste est celui de --code (defaut : le code du depot).
 """
 from __future__ import annotations

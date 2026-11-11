@@ -163,7 +163,7 @@ async fn file(
     let root = st.settings.root_dir.canonicalize()
         .map_err(|e| ApiError(localai_core::AppError::Internal(e.to_string())))?;
     // Racines supplementaires : dossiers accordes + Documents de Neo (les
-    // images generees y sont ecrites, hors de E:\ia).
+    // images generees y sont ecrites, hors de la racine).
     let mut extra: Vec<std::path::PathBuf> = Vec::new();
     for s in serde_json::from_str::<Vec<String>>(&st.db.get_setting("allowed_roots", "[]"))
         .unwrap_or_default()

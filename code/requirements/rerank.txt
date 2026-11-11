@@ -1,0 +1,4 @@
+# Reclassement des passages (recherche dans les documents). Installe torch pour processeur ; carte NVIDIA : installer d abord torch CUDA depuis pytorch.org.
+# Versions de l environnement de reference (voir ../requirements.txt).
+torch==2.11.0
+transformers==5.5.0

@@ -123,7 +123,7 @@ def _read_manifest() -> dict | None:
 def _find_gguf_converter() -> Path | None:
     candidates = [
         settings.root_dir / "convert_hf_to_gguf.py",
-        Path("D:/huggingface_cache/convert_hf_to_gguf.py"),
+        *([Path(os.environ["HF_HOME"]) / "convert_hf_to_gguf.py"] if os.environ.get("HF_HOME") else []),
         Path(os.environ.get("TEMP", "")) / "convert_hf_to_gguf.py",
     ]
     for p in candidates:
@@ -329,9 +329,9 @@ async def start_training() -> dict:
     def _run_training_sync():
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "utf-8"
-        hf_cache = Path("E:/huggingface_cache")
-        if hf_cache.exists():
-            env["HF_HOME"] = str(hf_cache)
+        # Cache Hugging Face : reglage chemins.cache_hf de neo.toml (HF_HOME).
+        if os.environ.get("HF_HOME"):
+            env["HF_HOME"] = os.environ["HF_HOME"]
         if VENV_PYTHON.exists():
             env["PATH"] = str(VENV_PYTHON.parent) + os.pathsep + env.get("PATH", "")
         subprocess.run(

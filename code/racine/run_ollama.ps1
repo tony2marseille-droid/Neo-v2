@@ -1,9 +1,29 @@
 $ErrorActionPreference = 'Continue'
-$OllamaLog = 'E:\ia\logs\ollama_boot.log'
-# Ollama est installe dans le profil de l'utilisateur ; ce script peut tourner
-# sous un autre compte : on cherche dans tous les profils.
-$bin = (Get-ChildItem "$env:SystemDrive\Users\*\AppData\Local\Programs\Ollama\ollama.exe" -ErrorAction SilentlyContinue |
-    Select-Object -First 1).FullName
+# Reglages : neo.toml (scripts\NeoConfig.psm1), sinon LOCALAI_ROOT, sinon le dossier du script.
+$racine = $PSScriptRoot
+$module = Join-Path $PSScriptRoot 'scripts\NeoConfig.psm1'
+if (Test-Path $module) {
+    Import-Module $module -Force
+    $racine = Import-NeoConfig -Depart $racine
+} elseif ($env:LOCALAI_ROOT) { $racine = $env:LOCALAI_ROOT }
+$OllamaLog = Join-Path $racine 'logs\ollama_boot.log'
+# Executable d'Ollama : OLLAMA_BIN (neo.toml [ollama] executable) s'il est defini.
+$bin = $null
+if ($env:OLLAMA_BIN) {
+    $bin = (Get-Command $env:OLLAMA_BIN -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1).Path
+}
+# Sinon : Ollama est installe dans le profil de l'utilisateur ; ce script peut
+# tourner sous un autre compte : on cherche dans tous les profils.
+if (-not $bin) {
+    $bin = (Get-ChildItem "$env:SystemDrive\Users\*\AppData\Local\Programs\Ollama\ollama.exe" -ErrorAction SilentlyContinue |
+        Select-Object -First 1).FullName
+}
+# Dernier recours : "ollama" trouve par le PATH.
+if (-not $bin) {
+    $bin = (Get-Command 'ollama' -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1).Path
+}
 
 function Log([string]$msg) {
   $line = "{0} ollama_boot: {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $msg

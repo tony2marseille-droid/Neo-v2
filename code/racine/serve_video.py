@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Lance l'API vidéo Néo sur un port dédié (FastAPI + uvicorn, port 8321).
 
-Déployé en E:\\ia\\serve_video.py par deployer.ps1 (voir correspondances.psd1).
+Déployé en <racine>\\serve_video.py par deployer.ps1 (voir correspondances.psd1).
 
 Sécurité, alignée sur le serveur Rust (main.rs, auth_middleware) :
 - CORS limité aux pages servies par Néo (port 8320, quel que soit l'hôte) ;
@@ -17,7 +17,7 @@ import os
 import sys
 from pathlib import Path
 
-# Racine du projet : dossier du script (E:\ia) ou son parent (code\scripts).
+# Racine du projet : dossier du script (<racine>) ou son parent (code\scripts).
 _ICI = Path(__file__).resolve().parent
 RACINE = _ICI if (_ICI / "backend").is_dir() else _ICI.parent
 if str(RACINE) not in sys.path:

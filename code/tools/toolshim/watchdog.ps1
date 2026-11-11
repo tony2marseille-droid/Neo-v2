@@ -3,7 +3,15 @@
 #   8320 -> LocalAI_server_boot  (serveur Rust, frontend + API)
 #   8321 -> NeoVideoAPI          (API video + liste des fichiers Neo + vignettes)
 #   8330 -> Neo_Toolshim         (proxy tool-calling du chat)
-$log = "E:\ia\tools\toolshim\watchdog_all.log"
+# Reglages : neo.toml (scripts\NeoConfig.psm1), sinon LOCALAI_ROOT, sinon <racine> deduite
+# de l'emplacement du script (<racine>\tools\toolshim).
+$racine = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$module = Join-Path $PSScriptRoot '..\..\scripts\NeoConfig.psm1'
+if (Test-Path $module) {
+    Import-Module $module -Force
+    $racine = Import-NeoConfig -Depart $racine
+} elseif ($env:LOCALAI_ROOT) { $racine = $env:LOCALAI_ROOT }
+$log = Join-Path $racine 'tools\toolshim\watchdog_all.log'
 
 function Test-Port($port) {
     try {

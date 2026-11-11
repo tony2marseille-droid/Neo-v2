@@ -10,9 +10,10 @@ from pathlib import Path
 from backend.core.security import verifier_acces as _verifier_acces
 from backend.tools.common import (_OPENCAD_PATHS, _find_exe,
     _find_vision_model, _load_trimesh, _poser_z0)
+from backend.core import reglages
 
 
-_RACINE = os.environ.get("LOCALAI_ROOT", r"E:\ia")
+_RACINE = str(reglages.racine())
 _TSR_PYTHON = os.environ.get("LOCALAI_VENV_PYTHON", str(Path(_RACINE) / ".venv" / "Scripts" / "python.exe"))
 _TSR_RUN = str(Path(_RACINE) / "tools" / "TripoSR" / "run.py")
 _STL_VIEW_ANGLES = [("face", 68, 0), ("profil", 68, 90), ("dos", 68, 180), ("iso", 68, 315)]
@@ -99,7 +100,7 @@ def _generer_mesh_hunyuan(image_path: str, out_stl: str, height_mm: float,
             import sys as _sys
 
             repo = os.environ.get(
-                "LOCALAI_HUNYUAN21_DIR", r"E:\ia\tools\Hunyuan3D-2.1\hy3dshape"
+                "LOCALAI_HUNYUAN21_DIR", str(reglages.racine() / "tools" / "Hunyuan3D-2.1" / "hy3dshape")
             )
             if repo and repo not in _sys.path:
                 _sys.path.insert(0, repo)

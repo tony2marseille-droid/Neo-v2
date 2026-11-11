@@ -6,8 +6,9 @@ bruites) : erreurs sur les mots 7,1 % avec Whisper small -> 4,7 % avec Parakeet 
 « parakeet » ou une taille Whisper (« small », « medium »...).
 """
 from pathlib import Path
+from backend.core import reglages
 
-PARAKEET = Path(r"I:\Neo-Archive-2026\models\parakeet-tdt-0.6b-v3-onnx")
+PARAKEET = reglages.chemin("NEO_PARAKEET_DIR", "models", "parakeet-tdt-0.6b-v3-onnx")
 DUREE_MAX_PARAKEET_S = 20 * 60  # au-dela : Whisper (decoupage par activite vocale)
 
 _engine = None

@@ -402,7 +402,8 @@ pub fn precheck(root: &std::path::Path, name: &str, args: &Value) -> Option<Stri
         .get("sandbox_root")
         .and_then(|x| x.as_str())
         .map(|s| s.to_string())
-        .unwrap_or_else(|| "E:\\ia\\workspace".to_string());
+        .or_else(|| std::env::var("NEO_ESPACE_TRAVAIL").ok())
+        .unwrap_or_else(|| root.join("workspace").to_string_lossy().into_owned());
     let read_roots = {
         let mut v: Vec<String> = r
             .get("sandbox_read_roots")
@@ -411,7 +412,7 @@ pub fn precheck(root: &std::path::Path, name: &str, args: &Value) -> Option<Stri
             .unwrap_or_default();
         if v.is_empty() {
             v.push(root_w.clone());
-            v.push("E:\\ia\\data\\documents".to_string());
+            v.push(root.join("data").join("documents").to_string_lossy().into_owned());
         }
         v
     };
@@ -457,7 +458,7 @@ pub fn precheck(root: &std::path::Path, name: &str, args: &Value) -> Option<Stri
             .and_then(|x| x.as_str())
             .unwrap_or("");
         // `..` refuse comme COMPOSANT (et pas seulement suivi d'un separateur :
-        // `E:\ia\workspace\..` passait auparavant).
+        // `<racine>\workspace\..` passait auparavant).
         if raw.split(['\\', '/']).any(|c| c.trim() == "..") {
             return Some("refusé: traversée de dossier interdite (..) ".into());
         }
@@ -500,34 +501,41 @@ mod tests {
         assert_eq!(secondes("fiche_creer"), 120);
     }
 
-    /// Racine sans `data/security_rules.json` : regles par defaut
-    /// (ecriture `E:\ia\workspace`, lecture workspace + documents).
+    /// Racine de test sans `data/security_rules.json` : regles par defaut
+    /// (ecriture `<racine>\workspace`, lecture workspace + `<racine>\data\documents`).
+    fn racine_test() -> std::path::PathBuf {
+        std::env::temp_dir().join("neo_precheck_sans_regles")
+    }
+
+    fn sous_racine(rel: &str) -> String {
+        format!("{}\\{rel}", racine_test().display())
+    }
+
     fn refuse(name: &str, args: Value) -> bool {
-        let root = std::env::temp_dir().join("neo_precheck_sans_regles");
-        precheck(&root, name, &args).is_some()
+        precheck(&racine_test(), name, &args).is_some()
     }
 
     #[test]
     fn precheck_refuse_les_evasions_de_chemin() {
         for p in [
-            r"E:\ia\workspace\..",
-            r"E:\ia\workspace\..\backend\x.py",
-            r"E:\ia\workspace_old\x.txt",
-            r"..\secret.txt",
-            r"\Users\Camille\.ssh\id_rsa",
-            r"\serveur\partage\x",
-            r"C:\Windows\win.ini",
+            sous_racine(r"workspace\.."),
+            sous_racine(r"workspace\..\backend\x.py"),
+            sous_racine(r"workspace_old\x.txt"),
+            r"..\secret.txt".to_string(),
+            r"\Users\Camille\.ssh\id_rsa".to_string(),
+            r"\serveur\partage\x".to_string(),
+            r"C:\Windows\win.ini".to_string(),
         ] {
             assert!(refuse("read_file", json!({ "path": p })), "devait refuser {p}");
         }
-        assert!(refuse("write_file", json!({ "path": r"E:\ia\data\documents\x.txt" })));
+        assert!(refuse("write_file", json!({ "path": sous_racine(r"data\documents\x.txt") })));
     }
 
     #[test]
     fn precheck_accepte_le_workspace() {
-        assert!(!refuse("read_file", json!({ "path": r"E:\ia\workspace\notes.txt" })));
+        assert!(!refuse("read_file", json!({ "path": sous_racine(r"workspace\notes.txt") })));
         assert!(!refuse("write_file", json!({ "path": "sous/dossier/notes.txt" })));
-        assert!(!refuse("list_dir", json!({ "path": r"E:\ia\data\documents" })));
+        assert!(!refuse("list_dir", json!({ "path": sous_racine(r"data\documents") })));
     }
 
     #[test]

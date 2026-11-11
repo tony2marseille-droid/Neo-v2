@@ -48,6 +48,7 @@
         @{ Depot = 'config\models.json'; Vivant = 'E:\ia\config\models.json' }
         @{ Depot = 'config\services.json'; Vivant = 'E:\ia\config\services.json' }   # services du superviseur (relu a chaud)
         @{ Depot = 'config\neo_persona.md'; Vivant = 'E:\ia\config\neo_persona.md' }  # personnage de Neo (relu a chaque message)
+        @{ Depot = 'config\neo.toml'; Vivant = 'E:\ia\neo.toml' }                     # reglages de CETTE machine (non versionne)
         # Scripts a la racine de E:\ia, lances par le serveur ou par les taches planifiees
         @{ Depot = 'racine\apprentissage.py';    Vivant = 'E:\ia\apprentissage.py' }    # route /documents (apprentissage)
         @{ Depot = 'racine\conseil.py';          Vivant = 'E:\ia\conseil.py' }          # route /conseil
@@ -62,6 +63,7 @@
         @{ Depot = 'racine\run_server_watch.ps1'; Vivant = 'E:\ia\run_server_watch.ps1' }
         @{ Depot = 'racine\run_ollama.ps1';      Vivant = 'E:\ia\run_ollama.ps1' }      # relance par garde_prod
         # Outils d'installation
+        @{ Depot = 'scripts\NeoConfig.psm1';        Vivant = 'E:\ia\scripts\NeoConfig.psm1' }   # lecture de neo.toml pour les scripts
         @{ Depot = 'scripts\build_exe.ps1';         Vivant = 'E:\ia\scripts\build_exe.ps1' }
         @{ Depot = 'scripts\install_models.ps1';    Vivant = 'E:\ia\scripts\install_models.ps1' }
         @{ Depot = 'scripts\publish_update.ps1';    Vivant = 'E:\ia\scripts\publish_update.ps1' }

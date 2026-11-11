@@ -18,13 +18,16 @@ import sqlite3
 import time
 import urllib.request
 from pathlib import Path
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from backend.core import reglages  # noqa: E402
 
 ICI = Path(__file__).resolve().parent
 DEPOT = ICI.parent.parent
 OLLAMA = "http://127.0.0.1:11434"
-BASE = r"E:\ia\data\localai.db"
+BASE = str(reglages.chemin("NEO_DB_PATH", "data", "localai.db"))
 RERANK_BGE = "http://127.0.0.1:8322/rerank"
-QWEN_RERANKER = r"I:\Neo-Archive-2026\models\Qwen3-Reranker-0.6B"
+QWEN_RERANKER = str(reglages.chemin("NEO_QWEN_RERANKER", "models", "Qwen3-Reranker-0.6B"))
 CONSIGNE_QWEN = "Given a question in French, retrieve the passage of documentation that answers it"
 
 QUESTIONS = [
@@ -32,7 +35,7 @@ QUESTIONS = [
     ("Pourquoi a-t-on renoncé à affiner l'image morceau par morceau ?", ["chaque tuile inventait"]),
     ("Quel modèle d'image a pris la place de FLUX schnell comme modèle principal ?", ["Z-Image-Turbo Q8"]),
     ("Comment le studio a-t-il fini par comprendre le mot lazar dans une scène spatiale ?", ["-> blazar"]),
-    ("Sur quel disque garde-t-on tous les modèles de diffusion pour épargner le SSD ?", ["I:\\Neo-Archive-2026\\tools\\sd"]),
+    ("Sur quel disque garde-t-on tous les modèles de diffusion pour épargner le SSD ?", ["Neo-Archive-2026"]),
     ("Quelle voix française neuronale a été installée pour Néo ?", ["fr_FR-tom-medium"]),
     ("Combien de temps prend le décodage d'une vidéo avec le petit décodeur ?", ["720 s → 3 s"]),
     ("Pourquoi a-t-on renoncé au gros modèle Qwen à 35 milliards de paramètres ?", ["écrans bleus"]),

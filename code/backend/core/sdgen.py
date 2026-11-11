@@ -1,7 +1,7 @@
 """Generation d'images locale via stable-diffusion.cpp.
 
 Meme philosophie que TripoSR : binaire et modeles isoles dans un dossier
-outils (defaut E:\\ia\\tools\\sd, surcharge par LOCALAI_SD_DIR), aucune
+outils (defaut <racine>\\tools\\sd, surcharge par LOCALAI_SD_DIR), aucune
 dependance python lourde dans l'application principale.
 """
 
@@ -18,6 +18,7 @@ from pathlib import Path
 from backend.core import priorite as _priorite
 from backend.core.security import extension_autorisee_ecriture as _extension_bloquee
 from backend.core.security import verifier_acces as _verifier_acces
+from backend.core import reglages
 
 # Lance par une tache planifiee, ce processus herite d'une priorite basse
 # (disque et memoire compris) : sd-cli chargeait ses poids 100 fois plus
@@ -81,7 +82,7 @@ def _dir() -> Path:
     Ne pas confondre avec `_dossier_sortie()` qui, lui, designe l'endroit ou
     les images generees sont ecrites.
     """
-    return Path(os.environ.get("LOCALAI_SD_DIR", r"E:\ia\tools\sd"))
+    return reglages.chemin("LOCALAI_SD_DIR", "tools", "sd")
 
 
 def _dossier_sortie(settings=None) -> Path | None:
@@ -635,7 +636,7 @@ def preparer_prompt(prompt: str, traduire: bool = True, reference_desc: str = ""
 
 
 def _esrgan_exe() -> Path | None:
-    d = Path(os.environ.get("LOCALAI_ESRGAN_DIR", r"E:\ia\tools\RealESRGAN"))
+    d = reglages.chemin("LOCALAI_ESRGAN_DIR", "tools", "RealESRGAN")
     if not d.is_dir():
         return None
     for p in sorted(d.glob("realesrgan-ncnn-vulkan*.exe")):

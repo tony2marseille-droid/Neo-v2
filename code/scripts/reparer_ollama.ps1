@@ -11,7 +11,7 @@
 # relance l'installeur deja telecharge par Ollama, verifie les moteurs, puis
 # rend la main au superviseur qui relance `ollama serve`.
 #
-#   powershell -ExecutionPolicy Bypass -File E:\neo-repo\code\scripts\reparer_ollama.ps1
+#   powershell -ExecutionPolicy Bypass -File <depot>\code\scripts\reparer_ollama.ps1
 #   ... -SansMiseAJourAuto   : desactive en plus les deux taches planifiees qui
 #                              lancent l'application Ollama et met de cote son
 #                              raccourci de demarrage (sources des mises a jour
@@ -23,6 +23,14 @@ $estAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIde
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $estAdmin) { throw "A lancer dans une console PowerShell ADMINISTRATEUR." }
 
+# Reglages : neo.toml (NeoConfig.psm1), sinon LOCALAI_ROOT, sinon le dossier parent du script.
+$racine = Split-Path -Parent $PSScriptRoot
+$module = Join-Path $PSScriptRoot 'NeoConfig.psm1'
+if (Test-Path $module) {
+    Import-Module $module -Force
+    $racine = Import-NeoConfig -Depart $racine
+} elseif ($env:LOCALAI_ROOT) { $racine = $env:LOCALAI_ROOT }
+
 # Ollama vit dans le profil de l'utilisateur qui l'a installe (pas forcement
 # celui de la console administrateur) : on le cherche dans tous les profils.
 $exe = Get-ChildItem "$env:SystemDrive\Users\*\AppData\Local\Programs\Ollama\ollama.exe" -ErrorAction SilentlyContinue |
@@ -30,10 +38,10 @@ $exe = Get-ChildItem "$env:SystemDrive\Users\*\AppData\Local\Programs\Ollama\oll
 if (-not $exe) { throw "Ollama introuvable dans les profils de $env:SystemDrive\Users (l'installer depuis ollama.com)" }
 $dossier = $exe.DirectoryName                                   # ...\AppData\Local\Programs\Ollama
 $local = Split-Path (Split-Path $dossier)                       # ...\AppData\Local
-$profil = Split-Path (Split-Path $local)                        # C:\Users\<nom>
+$profil = Split-Path (Split-Path $local)                        # <lecteur systeme>\Users\<nom>
 $installeur = Join-Path $local 'Ollama\OllamaSetup.exe'
 $journal = Join-Path $local 'Ollama\reparation.log'
-$config = 'E:\ia\config\services.json'
+$config = Join-Path $racine 'config\services.json'
 if (-not (Test-Path $installeur)) { throw "Installeur introuvable : $installeur (le telecharger depuis ollama.com)" }
 
 function Ecrire-Actif([bool]$actif) {
@@ -97,7 +105,7 @@ if ($SansMiseAJourAuto) {
     # met de cote ; le superviseur de Neo lance `ollama serve` sans lui.
     $raccourci = Join-Path $profil 'AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\Ollama.lnk'
     if (Test-Path $raccourci) {
-        $cote = "E:\ia\_sauvegardes\ollama_demarrage_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+        $cote = "$racine\_sauvegardes\ollama_demarrage_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
         New-Item -ItemType Directory -Force -Path $cote | Out-Null
         Move-Item $raccourci $cote
         Write-Host "Raccourci de demarrage mis de cote : $cote\Ollama.lnk (le remettre dans le dossier Demarrage pour revenir en arriere)"
@@ -113,4 +121,4 @@ for ($i = 0; $i -lt 36; $i++) {
         exit 0
     } catch {}
 }
-Write-Warning "Ollama ne repond pas encore ; voir E:\ia\logs\ollama_superviseur.log"
+Write-Warning "Ollama ne repond pas encore ; voir $racine\logs\ollama_superviseur.log"

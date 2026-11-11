@@ -11,13 +11,18 @@ from pathlib import Path
 from backend.core.security import verifier_acces as _verifier_acces, charger_regles as _charger_regles
 from backend.tools.common import (UrlRefusee, _sandbox_cfg, chemin_ecriture,
     chemin_lecture, client_http, refus_url)
+from backend.core import reglages
 
 
 def _racine_notes() -> str:
     try:
-        return str(_charger_regles().get("sandbox_root", r"E:\ia\workspace"))
+        return str(_charger_regles().get("sandbox_root", _espace_travail()))
     except Exception:
-        return r"E:\ia\workspace"
+        return _espace_travail()
+
+
+def _espace_travail() -> str:
+    return str(reglages.chemin("NEO_ESPACE_TRAVAIL", "workspace"))
 
 
 def _fichier_notes() -> Path:
@@ -98,7 +103,7 @@ def tool_memoire_ajouter(contenu: str, tag: str = "user") -> str:
 # ---- 2. Notes persistantes (workspace/notes.md) ----
 
 def tool_notes(action: str = "lire", texte: str = "", titre: str = "") -> str:
-    """Notes personnelles persistantes (E:\\ia\\workspace\\notes.md).
+    """Notes personnelles persistantes (<espace de travail>\\notes.md).
 
     action : 'ecrire' (ajoute titre + texte), 'lire' (les N dernieres), 'effacer'.
     """

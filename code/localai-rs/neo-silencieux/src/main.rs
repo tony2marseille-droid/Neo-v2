@@ -2,8 +2,8 @@
 //!
 //! Usage (action d'une tache planifiee) :
 //!   neo-silencieux.exe <programme> [arguments...]
-//!   ex. neo-silencieux.exe powershell.exe -NoProfile -File E:\ia\garde_prod.ps1
-//!       neo-silencieux.exe cmd.exe /c E:\ia\tools\toolshim\watchdog_run.bat
+//!   ex. neo-silencieux.exe powershell.exe -NoProfile -File <racine>\garde_prod.ps1
+//!       neo-silencieux.exe cmd.exe /c <racine>\tools\toolshim\watchdog_run.bat
 //!
 //! Le lanceur lui-meme est une application « fenetre » (aucune console n'est
 //! creee) et demarre l'enfant avec CREATE_NO_WINDOW : un script PowerShell,

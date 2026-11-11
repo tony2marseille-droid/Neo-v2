@@ -1,0 +1,5 @@
+# Entrainement de modeles (carte NVIDIA 16 Go conseillee).
+# Versions de l environnement de reference (voir ../requirements.txt).
+unsloth==2026.8.21
+gguf==0.19.0
+mistral_common==1.11.7

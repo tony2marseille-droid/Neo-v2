@@ -8,6 +8,7 @@ import threading
 from pathlib import Path
 
 from backend.core.security import charger_regles, journaliser
+from backend.core import reglages
 
 
 _SANDBOX_LOCK = threading.Lock()
@@ -53,13 +54,8 @@ def _est_sous(chemin: Path, racine: Path) -> bool:
 
 
 def _default_root() -> Path:
-    """Racine par defaut selon l'OS (Windows: E:\\ia, Linux: /opt/oracle ou ~/.oracle)."""
-    if os.name == "nt":
-        return Path(os.environ.get("LOCALAI_ROOT", r"E:\ia"))
-    # Linux/macOS : /opt/oracle (si root) ou ~/.oracle (utilisateur)
-    if os.geteuid() == 0:
-        return Path("/opt/oracle")
-    return Path.home() / ".oracle"
+    """Racine d'installation (neo.toml / LOCALAI_ROOT, sinon dossier du projet)."""
+    return reglages.racine()
 
 
 def _sandbox_cfg() -> dict:

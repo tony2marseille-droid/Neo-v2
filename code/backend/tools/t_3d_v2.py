@@ -15,8 +15,9 @@ from pathlib import Path
 
 from backend.core.security import verifier_acces as _verifier_acces
 from backend.tools.common import _load_trimesh, _poser_z0
+from backend.core import reglages
 
-_RACINE = os.environ.get("LOCALAI_ROOT", r"E:\ia")
+_RACINE = str(reglages.racine())
 
 # Volume d'impression (mm) : Flashforge AD5X par defaut (audit §6).
 _PLATES = {
@@ -50,10 +51,9 @@ _SLICER_DIRS = [
     os.path.expandvars(r"%LOCALAPPDATA%\Programs\OrcaSlicer"),
     os.path.expandvars(r"%LOCALAPPDATA%\Programs\Orca-Flashforge"),
     os.path.expandvars(r"%LOCALAPPDATA%\Programs\BambuStudio"),
-    r"D:\OrcaSlicer",
-    r"E:\OrcaSlicer",
-    r"D:\FlashForge",
-    r"E:\FlashForge",
+    # Dossiers supplementaires propres a la machine (neo.toml, [variables]) :
+    # NEO_DOSSIERS_TRANCHEURS = "D:\\Logiciels\\Trancheur"
+    *[d for d in os.environ.get("NEO_DOSSIERS_TRANCHEURS", "").split(";") if d.strip()],
 ]
 
 

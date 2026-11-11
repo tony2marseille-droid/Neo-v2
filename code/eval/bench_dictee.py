@@ -17,13 +17,16 @@ import time
 import unicodedata
 import wave
 from pathlib import Path
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from backend.core import reglages  # noqa: E402
 
 import numpy as np
 
 ICI = Path(__file__).resolve().parent
-VOIX_PIPER = Path(r"E:\ia\tools\voix\fr_FR-tom-medium.onnx")
-PARAKEET = Path(r"I:\Neo-Archive-2026\models\parakeet-tdt-0.6b-v3-onnx")
-TRAVAIL = Path(r"E:\LocalAI-tmp\bench_dictee")
+VOIX_PIPER = reglages.chemin("NEO_VOIX_DIR", "tools", "voix") / "fr_FR-tom-medium.onnx"
+PARAKEET = reglages.chemin("NEO_PARAKEET_DIR", "models", "parakeet-tdt-0.6b-v3-onnx")
+TRAVAIL = Path(__import__("tempfile").gettempdir()) / "bench_dictee"
 
 PHRASES = [
     "Bonjour Néo, peux-tu me rappeler d'acheter du pain en rentrant ce soir ?",

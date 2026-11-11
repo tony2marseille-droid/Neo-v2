@@ -1,0 +1,48 @@
+# neo.toml - reglages de VOTRE machine pour Neo.
+#
+# Copiez ce fichier en « neo.toml » a la racine de l'installation (l'installateur
+# le fait pour vous) puis adaptez-le. Tout est facultatif : une valeur vide ou
+# absente garde le defaut indique, relatif au dossier d'installation.
+#
+# Priorite : une variable d'environnement deja definie l'emporte toujours sur
+# ce fichier. « {racine} » est remplace par le dossier d'installation.
+# Sous Windows, doublez les barres obliques inverses ("D:\\Modeles") ou
+# utilisez des guillemets simples ('D:\Modeles').
+
+[chemins]
+racine = ""                 # vide = dossier qui contient ce fichier
+donnees = ""                # defaut {racine}\data (base, documents, images)
+journal = ""                # defaut {racine}\logs\neo.log
+espace_travail = ""         # defaut {racine}\workspace (bac a sable des outils)
+sd = ""                     # defaut {racine}\tools\sd (moteur et modeles d'image)
+retouche = ""               # dossier des modeles de retouche (FLUX.2-klein)
+esrgan = ""                 # defaut {racine}\tools\RealESRGAN
+voix = ""                   # defaut {racine}\tools\voix (voix Piper)
+parakeet = ""               # defaut {racine}\models\parakeet-tdt-0.6b-v3-onnx (dictee)
+hunyuan = ""                # defaut {racine}\tools\Hunyuan3D-2.1\hy3dshape (3D)
+modele_visages = ""         # defaut {racine}\models\face_detection_yunet_2023mar.onnx
+cache_hf = ""               # cache Hugging Face (HF_HOME) ; vide = defaut de la bibliotheque
+
+[reseau]
+hote = "127.0.0.1"          # "0.0.0.0" pour ouvrir Neo aux autres appareils du reseau local
+port = 8320
+
+[ollama]
+url = ""                    # defaut http://127.0.0.1:11434
+executable = ""             # defaut : « ollama » trouve dans le PATH
+modeles = ""                # dossier des modeles d'Ollama (OLLAMA_MODELS)
+
+[outils]                    # vide = recherche automatique (PATH, Program Files)
+python = ""                 # defaut {racine}\.venv\Scripts\python.exe
+ffmpeg = ""
+blender = ""
+openscad = ""
+trancheur = ""              # PrusaSlicer, OrcaSlicer, Bambu Studio, Cura...
+
+[materiel]
+palier_force = ""           # "", "T1", "T2" ou "T3" pour imposer un palier de modeles
+
+[variables]
+# Reglages avances : toute variable d'environnement de Neo, par exemple
+# NEO_IMAGE_VERIF = "0"
+# NEO_DOSSIERS_TRANCHEURS = 'D:\Logiciels\Trancheur;D:\Logiciels\Autre'

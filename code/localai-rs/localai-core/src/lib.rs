@@ -1,6 +1,7 @@
 pub mod config;
 pub mod db;
 pub mod error;
+pub mod neoconf;
 pub mod ollama;
 pub mod processus;
 pub mod providers;

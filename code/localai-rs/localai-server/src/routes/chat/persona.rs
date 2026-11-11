@@ -345,7 +345,7 @@ mod tests {
         assert!(!code_a_ecrire_seulement("Écris une fonction dans le fichier utils.py"));
         assert!(!code_a_ecrire_seulement("Écris un script et exécute-le"));
         assert!(!code_a_ecrire_seulement("Corrige la fonction de mon projet"));
-        assert!(!code_a_ecrire_seulement("Liste le dossier E:\\ia\\workspace"));
+        assert!(!code_a_ecrire_seulement("Liste le dossier D:\\Neo\\workspace"));
     }
 
     #[test]

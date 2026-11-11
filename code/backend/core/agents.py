@@ -36,8 +36,16 @@ def _lire(chemin: Path, defaut: str = "") -> str:
 
 
 def _consigne(agent_id: str) -> str:
-    """Consigne d'un agent : `consignes/<id>.md`."""
-    return _lire(_CONSIGNES / f"{agent_id}.md")
+    """Consigne d'un agent : `consignes/<id>.md`.
+
+    `{espace_travail}` y designe le dossier de travail de la machine
+    (neo.toml : chemins.espace_travail, sinon <racine>/workspace).
+    """
+    texte = _lire(_CONSIGNES / f"{agent_id}.md")
+    if "{espace_travail}" in texte:
+        from backend.core import reglages
+        texte = texte.replace("{espace_travail}", str(reglages.chemin("NEO_ESPACE_TRAVAIL", "workspace")))
+    return texte
 
 
 @dataclass

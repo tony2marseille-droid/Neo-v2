@@ -1,11 +1,11 @@
 # superviseur_taches.ps1 - bascule vers le superviseur unique (localai-watch).
 #
 # Usage (console PowerShell ADMINISTRATEUR, APRES un deploiement qui contient le superviseur) :
-#   powershell -ExecutionPolicy Bypass -File E:\neo-repo\code\scripts\superviseur_taches.ps1            # simulation
-#   powershell -ExecutionPolicy Bypass -File E:\neo-repo\code\scripts\superviseur_taches.ps1 -Executer  # application
+#   powershell -ExecutionPolicy Bypass -File <depot>\code\scripts\superviseur_taches.ps1            # simulation
+#   powershell -ExecutionPolicy Bypass -File <depot>\code\scripts\superviseur_taches.ps1 -Executer  # application
 #
 # Les services sont desormais lances et relances par localai-watch d'apres
-# E:\ia\config\services.json. Ce script :
+# <racine>\config\services.json. Ce script :
 #   1. sauvegarde le XML des taches concernees ;
 #   2. DESACTIVE (sans les supprimer) les taches de lancement et les anciens
 #      chiens de garde, qui feraient double emploi avec le superviseur ;
@@ -16,7 +16,14 @@
 param([switch]$Executer)
 
 $ErrorActionPreference = 'Stop'
-$sauvegarde = "E:\ia\_sauvegardes\taches_superviseur_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+# Reglages : neo.toml (NeoConfig.psm1), sinon LOCALAI_ROOT, sinon le dossier parent du script.
+$racine = Split-Path -Parent $PSScriptRoot
+$module = Join-Path $PSScriptRoot 'NeoConfig.psm1'
+if (Test-Path $module) {
+    Import-Module $module -Force
+    $racine = Import-NeoConfig -Depart $racine
+} elseif ($env:LOCALAI_ROOT) { $racine = $env:LOCALAI_ROOT }
+$sauvegarde = "$racine\_sauvegardes\taches_superviseur_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $admin) { throw 'console administrateur requise (certaines taches appartiennent a SYSTEM).' }
 
@@ -34,7 +41,7 @@ $remplacees = [ordered]@{
 
 $watch = Get-ScheduledTask -TaskName 'LocalAI_watch_rs' -ErrorAction SilentlyContinue
 if (-not $watch) { throw 'tache LocalAI_watch_rs absente : le superviseur ne demarrerait pas au boot.' }
-$etat = 'E:\ia\logs\services_etat.json'
+$etat = Join-Path $racine 'logs\services_etat.json'
 if (-not (Test-Path $etat) -or ((Get-Date) - (Get-Item $etat).LastWriteTime).TotalSeconds -gt 90) {
     throw "le superviseur ne tourne pas ($etat absent ou ancien) : deployer d'abord la version qui le contient."
 }

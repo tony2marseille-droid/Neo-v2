@@ -5,7 +5,7 @@ Un seul point d'ecriture pour le backend Python (routes, outils, taches
 detachees). Chaque ligne est un objet JSON, ce qui permet de filtrer par
 source/niveau sans parser du texte libre.
 
-Fichier par defaut : ``E:\\ia\\logs\\neo.log`` (surcharge : LOCALAI_LOG).
+Fichier par defaut : ``<racine>\\logs\\neo.log`` (surcharge : LOCALAI_LOG).
 Rotation : 10 Mo x 5 archives. Toute erreur d'ecriture est avalee : un
 journal ne doit jamais faire echouer une requete utilisateur.
 """
@@ -19,8 +19,9 @@ import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from backend.core import reglages
 
-RACINE = Path(os.environ.get("LOCALAI_ROOT", r"E:\ia"))
+RACINE = reglages.racine()
 FICHIER = Path(os.environ.get("LOCALAI_LOG", str(RACINE / "logs" / "neo.log")))
 MAX_OCTETS = int(os.environ.get("LOCALAI_LOG_MAX", str(10 * 1024 * 1024)))
 ARCHIVES = int(os.environ.get("LOCALAI_LOG_KEEP", "5"))

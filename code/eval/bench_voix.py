@@ -15,8 +15,12 @@ import os
 import time
 import wave
 from pathlib import Path
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from backend.core import reglages  # noqa: E402
 
-os.environ.setdefault("HF_HUB_CACHE", os.environ.get("NEO_HF_CACHE", r"I:\Neo-Archive-2026\hf-cache"))
+if os.environ.get("NEO_HF_CACHE"):
+    os.environ.setdefault("HF_HUB_CACHE", os.environ["NEO_HF_CACHE"])
 
 import numpy as np  # noqa: E402
 
@@ -55,7 +59,7 @@ def main() -> None:
 
     voix = {}
     from piper import PiperVoice
-    piper = PiperVoice.load(r"E:\ia\tools\voix\fr_FR-tom-medium.onnx")
+    piper = PiperVoice.load(str(reglages.chemin("NEO_VOIX_DIR", "tools", "voix") / "fr_FR-tom-medium.onnx"))
 
     def piper_tts(texte, chemin):
         with wave.open(str(chemin), "wb") as w:

@@ -13,3 +13,4 @@ chrono = { workspace = true }
 futures-util = { workspace = true }
 ring = "0.17.14"
 base64 = "0.22"
+toml = "1"

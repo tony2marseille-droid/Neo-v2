@@ -1,2 +1,8 @@
 @echo off
-E:\ia\.venv\Scripts\python.exe E:\ia\backend\core\coach.py >> E:\ia\logs\coach.log 2>&1
+setlocal
+rem Racine : LOCALAI_ROOT, sinon le dossier de ce fichier. Python : NEO_PYTHON, sinon le .venv de la racine.
+set "RACINE=%LOCALAI_ROOT%"
+if not defined RACINE for %%I in ("%~dp0.") do set "RACINE=%%~fI"
+set "PY=%NEO_PYTHON%"
+if not defined PY set "PY=%RACINE%\.venv\Scripts\python.exe"
+"%PY%" "%RACINE%\backend\core\coach.py" >> "%RACINE%\logs\coach.log" 2>&1

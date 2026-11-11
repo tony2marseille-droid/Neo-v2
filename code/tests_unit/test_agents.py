@@ -12,7 +12,8 @@ def test_chaque_agent_a_sa_consigne_dans_un_fichier():
             continue
         fichier = agents._CONSIGNES / f"{a.id}.md"
         assert fichier.is_file(), a.id
-        assert a.system_prompt == agents._lire(fichier) and len(a.system_prompt) > 200, a.id
+        assert a.system_prompt == agents._consigne(a.id) and len(a.system_prompt) > 200, a.id
+        assert "{espace_travail}" not in a.system_prompt, a.id
 
 
 def test_general_est_neo_lui_meme():

@@ -22,7 +22,7 @@ from backend.tools.t_video import (
 router = APIRouter(prefix="/api/video", tags=["video"])
 
 # Extensions servies par /file : uniquement des medias et documents. Sans ce
-# filtre, /file exposait n'importe quel fichier de E:\ia\data (bases SQLite,
+# filtre, /file exposait n'importe quel fichier de <racine>\data (bases SQLite,
 # journaux, code).
 EXT_SERVIES = {
     ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".tif", ".exr", ".bmp", ".gif",
@@ -106,7 +106,7 @@ def _racines_servies() -> list[Path]:
     """Racines autorisees en lecture par l'API video."""
     roots = [Path(VIDEO_DIR).resolve()] + _dossiers_de_production()
     roots += _neo_roots()
-    # Sorties du generateur d'images (E:\ia\data).
+    # Sorties du generateur d'images (<racine>\data).
     roots.append((Path(__file__).resolve().parents[2] / "data").resolve())
     uniq, vus = [], set()
     for r in roots:

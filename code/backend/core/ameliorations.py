@@ -3,7 +3,7 @@
 
 Le dev agent ecrit son code dans ``workspace/ameliorations/<id>/code.py``.
 Ce module installe ce code comme module d'amelioration dans
-``E:\\ia\\ameliorations\\`` apres validation, tient un manifeste et permet
+``<racine>\\ameliorations\\`` apres validation, tient un manifeste et permet
 de revenir en arriere (desinstallation).
 
 Pourquoi un registre plutot qu'une reecriture automatique du coeur :
@@ -27,8 +27,9 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from backend.core import reglages
 
-RACINE = Path(os.environ.get("LOCALAI_ROOT", r"E:\ia"))
+RACINE = reglages.racine()
 WORKSPACE = RACINE / "workspace" / "ameliorations"
 DEST = RACINE / "ameliorations"
 MANIFESTE = RACINE / "data" / "ameliorations.json"
